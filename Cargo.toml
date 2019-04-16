@@ -13,7 +13,7 @@ keywords = ["suffix_array", "binary", "sais"]
 maintenance = { status = "passively-maintained" }
 description = """
 Suffix array construction and searching algorithms optimized for
-in-memory binary data indexing.
+in-memory binary data.
 """
 
 [dev-dependencies]
