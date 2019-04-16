@@ -3,6 +3,18 @@ name = "suffix_array"
 version = "0.1.0"
 authors = ["hucsmn <hucsmn@hotmail.com>"]
 edition = "2018"
+homepage = "https://github.com/hucsmn/suffix_array"
+repository = "https://github.com/hucsmn/suffix_array"
+license = "MIT"
+license-file = "LICENSE"
+readme = "README.md"
+categories = ["algorithms"]
+keywords = ["suffix_array", "binary", "sais"]
+maintenance = { status = "passively-maintained" }
+description = """
+Suffix array construction and searching algorithms optimized for
+in-memory binary data indexing.
+"""
 
 [dev-dependencies]
 rand = "0.6"
