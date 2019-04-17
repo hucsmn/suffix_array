@@ -6,7 +6,7 @@ use std::ptr::copy_nonoverlapping;
 use utils::*;
 
 const THRESHOLD: usize = 128;
-const MAX_LENGTH: usize = std::u32::MAX as usize - 1;
+const MAX_LENGTH: usize = std::u32::MAX as usize - 2;
 const NIL: u32 = std::u32::MAX;
 
 /// Sort the byte string and calculate its suffix array.
@@ -46,7 +46,8 @@ fn naive_sort<T: Ord>(s: &[T], sa: &mut [u32]) {
 }
 
 /// Suffix array induced-sorting algorithm.
-/// The fast and relatively space efficient way to calculate suffix array.
+/// The fast (O(n)) and relatively space efficient (O(n+n/log(n))) way to
+/// calculate suffix array.
 /// Use bucket and type bitmap to speed up construction.
 fn sais<T>(s: &[T], scale: usize, sa: &mut [u32])
 where
