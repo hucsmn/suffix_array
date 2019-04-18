@@ -26,42 +26,42 @@ macro_rules! bench_with_cfg {
 
 fn small_len_small_scale(c: &mut Criterion) {
     c.bench_function(
-        "len-/scale-",
+        "search_prefix len-/scale-",
         bench_with_cfg!(str: 1..128, pat: 4..16 + 0..8, scale: 1..8),
     );
 }
 
 fn small_len_big_scale(c: &mut Criterion) {
     c.bench_function(
-        "len-/scale+",
+        "search_prefix len-/scale+",
         bench_with_cfg!(str: 1..128, pat: 4..16 + 0..8, scale: 1..128),
     );
 }
 
 fn median_len_small_scale(c: &mut Criterion) {
     c.bench_function(
-        "len=/scale-",
+        "search_prefix len=/scale-",
         bench_with_cfg!(str: 128..1024, pat: 8..32 + 0..16, scale: 4..16),
     );
 }
 
 fn median_len_big_scale(c: &mut Criterion) {
     c.bench_function(
-        "len=/scale+",
+        "search_prefix len=/scale+",
         bench_with_cfg!(str: 128..1024, pat: 8..32 + 0..16, scale: 128..192),
     );
 }
 
 fn large_len_small_scale(c: &mut Criterion) {
     c.bench_function(
-        "len+/scale-",
+        "search_prefix len+/scale-",
         bench_with_cfg!(str: 1024..2048, pat: 16..64 + 0..32, scale: 8..32),
     );
 }
 
 fn large_len_big_scale(c: &mut Criterion) {
     c.bench_function(
-        "len+/scale+",
+        "search_prefix len+/scale+",
         bench_with_cfg!(str: 1024..2048, pat: 16..64 + 0..32, scale: 192..255),
     );
 }
