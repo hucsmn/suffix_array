@@ -23,3 +23,15 @@ criterion = "0.2"
 [[bench]]
 name = "construct"
 harness = false
+
+[[bench]]
+name = "contains"
+harness = false
+
+[[bench]]
+name = "search_all"
+harness = false
+
+[[bench]]
+name = "search_prefix"
+harness = false
