@@ -52,6 +52,42 @@ impl<'s> SuffixArray<'s> {
         self.len() == 0
     }
 
+    /// Take out the suffix array and its corresponding byte string.
+    pub fn into_parts(self) -> (&'s [u8], Vec<u32>) {
+        (self.s, self.sa)
+    }
+
+    /// Compose existed suffix array and its corresponding byte string
+    /// together, and checks the integrity.
+    pub fn from_parts(s: &'s [u8], sa: Vec<u32>) -> Option<Self> {
+        let compose = SuffixArray { s, sa };
+        if compose.check_integrity() {
+            Some(compose)
+        } else {
+            None
+        }
+    }
+
+    /// Compose existed suffix array and its corresponding byte string
+    /// together without integrity checking.
+    pub unsafe fn from_parts_unchecked(s: &'s [u8], sa: Vec<u32>) -> Self {
+        SuffixArray { s, sa }
+    }
+
+    fn check_integrity(&self) -> bool {
+        if self.s.len() + 1 != self.sa.len() {
+            return false;
+        }
+        for i in 1..self.sa.len() {
+            let x = &self.s[self.sa[i - 1] as usize..];
+            let y = &self.s[self.sa[i] as usize..];
+            if x >= y {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Test if contains given sub-string.
     pub fn contains(&self, sub: &[u8]) -> bool {
         self.sa
@@ -118,7 +154,17 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    // TODO: convert SuffixArray <=> (&[u8], Vec<u32>).
     // TODO: LehmerCode encode/decode?
-    // TODO: accelerate searching using an optional LCP array?
+}
+
+impl<'s> From<SuffixArray<'s>> for Vec<u32> {
+    fn from(sa: SuffixArray<'s>) -> Vec<u32> {
+        sa.sa
+    }
+}
+
+impl<'s> AsRef<[u8]> for SuffixArray<'s> {
+    fn as_ref(&self) -> &[u8] {
+        self.s
+    }
 }

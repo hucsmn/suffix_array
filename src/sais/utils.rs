@@ -35,20 +35,15 @@ impl Types {
         types
     }
 
-    #[inline]
     fn set(&mut self, i: usize, t: bool) {
         debug_assert!(i < self.len);
-        unsafe {
-            let chunk = self.map.get_unchecked_mut(i / 32);
-            if t {
-                *chunk |= 1 << (i % 32);
-            } else {
-                *chunk &= !(1 << (i % 32));
-            }
+        if t {
+            self.map[i / 32] |= 1 << (i % 32);
+        } else {
+            self.map[i / 32] &= !(1 << (i % 32));
         }
     }
 
-    #[inline]
     pub fn is_lms(&self, i: usize) -> bool {
         debug_assert!(i <= self.len);
         if i == self.len {
@@ -65,12 +60,7 @@ impl Index<usize> for Types {
     type Output = bool;
     fn index(&self, i: usize) -> &bool {
         debug_assert!(i < self.len);
-        let chunk = if cfg!(debug_assertions) {
-            self.map[i / 32]
-        } else {
-            unsafe { *self.map.get_unchecked(1 / 32) }
-        };
-
+        let chunk = self.map[i / 32];
         if chunk & (1 << (i % 32)) != 0 {
             &true
         } else {
@@ -89,7 +79,6 @@ pub struct Span {
 }
 
 impl Span {
-    #[inline]
     pub fn new() -> Span {
         Span {
             head: 0,
@@ -99,44 +88,27 @@ impl Span {
         }
     }
 
-    #[inline]
     pub fn reset(&mut self) {
         self.reset_front();
         self.reset_back();
     }
 
-    #[inline]
     pub fn reset_front(&mut self) {
         self.i = self.head;
     }
 
-    #[inline]
     pub fn reset_back(&mut self) {
         self.j = self.tail;
     }
 
-    #[inline]
     pub fn push_front(&mut self, sa: &mut [u32], n: u32) {
-        if cfg!(debug_assertions) {
-            sa[self.i as usize] = n;
-        } else {
-            unsafe {
-                *sa.get_unchecked_mut(self.i as usize) = n;
-            }
-        }
+        sa[self.i as usize] = n;
         self.i += 1;
     }
 
-    #[inline]
     pub fn push_back(&mut self, sa: &mut [u32], n: u32) {
         self.j -= 1;
-        if cfg!(debug_assertions) {
-            sa[self.j as usize] = n;
-        } else {
-            unsafe {
-                *sa.get_unchecked_mut(self.j as usize) = n;
-            }
-        }
+        sa[self.j as usize] = n;
     }
 }
 
@@ -173,21 +145,13 @@ impl Bucket {
 impl Index<usize> for Bucket {
     type Output = Span;
     fn index(&self, i: usize) -> &Span {
-        if cfg!(debug_assertions) {
-            &self.0[i]
-        } else {
-            unsafe { self.0.get_unchecked(i) }
-        }
+        &self.0[i]
     }
 }
 
 impl IndexMut<usize> for Bucket {
     fn index_mut(&mut self, i: usize) -> &mut Span {
-        if cfg!(debug_assertions) {
-            &mut self.0[i]
-        } else {
-            unsafe { self.0.get_unchecked_mut(i) }
-        }
+        &mut self.0[i]
     }
 }
 

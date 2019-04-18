@@ -31,8 +31,6 @@ where
     } else {
         sais(s, scale, sa);
     }
-
-    // TODO: reduce space usage when scale is large enough.
 }
 
 /// The simplest but time costing way to calculate suffix array.

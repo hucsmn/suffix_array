@@ -1,6 +1,6 @@
 [package]
 name = "suffix_array"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["hucsmn <hucsmn@hotmail.com>"]
 edition = "2018"
 homepage = "https://github.com/hucsmn/suffix_array"
@@ -21,4 +21,16 @@ criterion = "0.2"
 
 [[bench]]
 name = "construct"
+harness = false
+
+[[bench]]
+name = "contains"
+harness = false
+
+[[bench]]
+name = "search_all"
+harness = false
+
+[[bench]]
+name = "search_prefix"
 harness = false
