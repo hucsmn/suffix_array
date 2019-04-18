@@ -37,6 +37,15 @@ macro_rules! assert_search_prefix_correct {
     }};
 }
 
+macro_rules! assert_convertion_correct {
+    ($s:expr) => {{
+        let s = $s;
+        let sa = SuffixArray::new(s);
+        let (_, vec1) = sa.clone().into_parts();
+        assert!(SuffixArray::from_parts(s, vec1).is_some());
+    }};
+}
+
 #[test]
 fn suffix_array_contains_basic() {
     assert_contains_correct!(b"" => b"");
@@ -110,6 +119,29 @@ fn suffix_array_search_prefix_random_samples() {
     for _ in 0..SAMPLES {
         let (sample_s, sample_pat) = gen_sample(BYTES_LEN, PATTERN_LEN, TRAILING_LEN, SCALE);
         assert_search_prefix_correct!(&sample_pat[..] => &sample_s[..]);
+    }
+}
+
+#[test]
+fn suffix_array_convertion_basic() {
+    assert_convertion_correct!(b"");
+    assert_convertion_correct!(b"\0");
+    assert_convertion_correct!(b"\xff");
+    assert_convertion_correct!(b"xxxxxxxx");
+    assert_convertion_correct!(b"xxxxoooo");
+    assert_convertion_correct!(b"baaccaaccaba");
+    assert_convertion_correct!(b"mmississiippii");
+}
+
+#[test]
+fn suffix_array_convertion_random_samples() {
+    const SAMPLES: usize = 1000;
+    const BYTES_LEN: Range<usize> = 0..1024;
+    const SCALE: Range<u8> = 1..16;
+
+    for _ in 0..SAMPLES {
+        let s = gen_bytes(BYTES_LEN, SCALE);
+        assert_convertion_correct!(&s[..]);
     }
 }
 
