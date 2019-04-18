@@ -118,7 +118,5 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    // TODO: convert SuffixArray <=> (&[u8], Vec<u32>).
     // TODO: LehmerCode encode/decode?
-    // TODO: accelerate searching using an optional LCP array?
 }

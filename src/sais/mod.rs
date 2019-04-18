@@ -30,8 +30,6 @@ where
     } else {
         sais(s, scale, sa);
     }
-
-    // TODO: reduce space usage when scale is large enough.
 }
 
 /// The simplest but time costing way to calculate suffix array.
@@ -179,8 +177,7 @@ fn induce_by_lms<T>(s: &[T], ty: &Types, sa: &mut [u32], bkt: &mut Bucket)
 where
     T: Copy + Into<u32> + Ord,
 {
-    // TODO: improve readability
-    // TODO: disable bound checks by wrapping s/sa? maybe no.
+    // TODO: disable bound checks? no
 
     // induce l characters by lms characters
     if s.len() > 0 {

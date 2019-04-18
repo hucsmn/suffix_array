@@ -1,9 +1,9 @@
 mod utils;
 
-use utils::*;
+use criterion::{criterion_group, criterion_main, Bencher, Criterion};
 use std::ops::Range;
 use suffix_array::SuffixArray;
-use criterion::{criterion_group, criterion_main, Bencher, Criterion};
+use utils::*;
 
 const LEN_SAMPLES: usize = 20;
 
@@ -37,15 +37,24 @@ fn median_len_small_scale(c: &mut Criterion) {
 }
 
 fn median_len_big_scale(c: &mut Criterion) {
-    c.bench_function("len=/scale+", bench_with_cfg!(str: 128..1024, scale: 128..192));
+    c.bench_function(
+        "len=/scale+",
+        bench_with_cfg!(str: 128..1024, scale: 128..192),
+    );
 }
 
 fn large_len_small_scale(c: &mut Criterion) {
-    c.bench_function("len+/scale-", bench_with_cfg!(str: 1024..2048, scale: 8..32));
+    c.bench_function(
+        "len+/scale-",
+        bench_with_cfg!(str: 1024..2048, scale: 8..32),
+    );
 }
 
 fn large_len_big_scale(c: &mut Criterion) {
-    c.bench_function("len+/scale+", bench_with_cfg!(str: 1024..2048, scale: 192..255));
+    c.bench_function(
+        "len+/scale+",
+        bench_with_cfg!(str: 1024..2048, scale: 192..255),
+    );
 }
 
 // TODO: test huge data
@@ -62,4 +71,3 @@ fn bench_by(b: &mut Bencher, len: Range<usize>, scale: Range<u8>) {
         }
     });
 }
-
