@@ -1,18 +1,24 @@
-//! Suffix array construction and searching algorithms balanced for indexing
-//! small or median sized binary data in memory.
+//! Suffix array construction and searching algorithms for in-memory binary
+//! data, focusing on space efficiency.
 //!
-//! The construction algorithm is based on SAIS as described in
-//! [Two Efficient Algorithms for Linear Time Suffix Array
-//! Construction](https://ieeexplore.ieee.org/document/5582081).
-//! Several optimization tricks were taken from
-//! [Optimal In-Place Suffix Sorting](https://arxiv.org/abs/1610.08305).
+//! The suffix array construction algorithm is O(n) time and O(1) space, which
+//! combined the recursion level 0 of SACA-K as described in [Ge Nong. 2013.
+//! Practical linear-time O(1)-workspace suffix sorting for constant
+//! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180) and a
+//! SAIS variant used in inner recursion levels that was developed by
+//! [Li, Z., Jian, L. and Huo, H. Optimal In-Place Suffix
+//! Sorting](https://arxiv.org/abs/1610.08305).
+//! Both of these two SAIS algorithms ran in linear-time and allocated constant
+//! workspace. There are no heap allocations, except for a bucket array (about
+//! 3k memory) in the recursion level 0 for speeding up sorting.
 
-mod sais;
-#[cfg(test)]
-mod tests;
+mod construct;
 mod utils;
 
-use sais::*;
+#[cfg(test)]
+mod tests;
+
+use construct::*;
 use std::ops::Range;
 use utils::*;
 

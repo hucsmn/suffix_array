@@ -1,5 +1,5 @@
 Suffix array
 ============
 
-Suffix array construction and searching algorithms optimized for
-in-memory binary data.
+Suffix array construction and searching algorithms for in-memory binary
+data, focusing on space efficiency.

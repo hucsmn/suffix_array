@@ -1,6 +1,6 @@
 [package]
 name = "suffix_array"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["hucsmn <hucsmn@hotmail.com>"]
 edition = "2018"
 homepage = "https://github.com/hucsmn/suffix_array"
@@ -11,8 +11,8 @@ categories = ["algorithms"]
 keywords = ["suffix_array", "binary", "sais"]
 maintenance = { status = "passively-maintained" }
 description = """
-Suffix array construction and searching algorithms optimized for
-in-memory binary data.
+Suffix array construction and searching algorithms for in-memory binary
+data, focusing on space efficiency.
 """
 
 [dev-dependencies]
