@@ -18,6 +18,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+pub use construct::MAX_LENGTH;
 use construct::*;
 use std::ops::Range;
 use utils::*;

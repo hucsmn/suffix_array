@@ -1,148 +1,67 @@
 use super::utils::common_prefix;
 use super::SuffixArray;
-use rand::random;
-use std::ops::Range;
+use proptest::prelude::*;
 
-macro_rules! assert_contains_correct {
-    ($pat:expr => $s:expr) => {{
-        let s = $s;
-        let pat = $pat;
-        let sa = SuffixArray::new(s);
-        assert_eq!(sa.contains(pat), naive_contains(s, pat));
-    }};
+macro_rules! bytes {
+    ($range:expr) => {
+        prop::collection::vec(any::<u8>(), $range)
+    };
 }
 
-macro_rules! assert_search_all_correct {
-    ($pat:expr => $s:expr) => {{
-        let s = $s;
-        let pat = $pat;
-        let sa = SuffixArray::new(s);
+proptest! {
+    #[test]
+    fn conversion_correctness(s in bytes!(0..4096_usize)) {
+        let (_, sa_vec) = SuffixArray::new(&*s).into_parts();
+        prop_assert!(SuffixArray::from_parts(&*s, sa_vec).is_some());
+    }
 
-        let mut sa_result: Vec<_> = sa.search_all(pat).into();
+    #[test]
+    fn contains_correctness((s, pat) in bytes_with_pat(0..4096_usize)) {
+        let sa = SuffixArray::new(&*s);
+        let sa_result = sa.contains(&*pat);
+        let naive_result = naive_contains(&*s, &*pat);
+        prop_assert!(sa_result == naive_result);
+    }
+
+    #[test]
+    fn search_all_correctness((s, pat) in bytes_with_pat(0..4096_usize)) {
+        let sa = SuffixArray::new(&*s);
+        let mut sa_result = Vec::from(sa.search_all(&*pat));
         sa_result.sort();
-        let naive_result = naive_search_all(s, pat);
-        assert_eq!(sa_result, naive_result);
-    }};
-}
+        let naive_result = naive_search_all(&*s, &*pat);
+        prop_assert!(sa_result == naive_result);
+    }
 
-macro_rules! assert_search_prefix_correct {
-    ($pat:expr => $s:expr) => {{
-        let s = $s;
-        let pat = $pat;
-        let sa = SuffixArray::new(s);
-
-        let sa_result = &s[sa.search_prefix(pat)];
-        let naive_result = naive_search_prefix(s, pat);
-        assert_eq!(sa_result, naive_result);
-    }};
-}
-
-macro_rules! assert_convertion_correct {
-    ($s:expr) => {{
-        let s = $s;
-        let sa = SuffixArray::new(s);
-        let (_, vec1) = sa.clone().into_parts();
-        assert!(SuffixArray::from_parts(s, vec1).is_some());
-    }};
-}
-
-#[test]
-fn suffix_array_contains_basic() {
-    assert_contains_correct!(b"" => b"");
-    assert_contains_correct!(b"" => b"");
-    assert_contains_correct!(b"" => b"x");
-    assert_contains_correct!(b"x" => b"");
-    assert_contains_correct!(b"x" => b"x");
-    assert_contains_correct!(b"11" => b"31112113");
-    assert_contains_correct!(b"112" => b"31112113");
-    assert_contains_correct!(b"114" => b"31112113");
-}
-
-#[test]
-fn suffix_array_contains_random_samples() {
-    const SAMPLES: usize = 1000;
-    const BYTES_LEN: Range<usize> = 0..200;
-    const PATTERN_LEN: Range<usize> = 0..16;
-    const TRAILING_LEN: Range<usize> = 0..2;
-    const SCALE: Range<u8> = 1..16;
-
-    for _ in 0..SAMPLES {
-        let (sample_s, sample_pat) = gen_sample(BYTES_LEN, PATTERN_LEN, TRAILING_LEN, SCALE);
-        assert_contains_correct!(&sample_pat[..] => &sample_s[..]);
+    #[test]
+    fn search_prefix_correctness((s, pat) in bytes_with_pat(0..1024_usize)) {
+        let sa = SuffixArray::new(&*s);
+        let sa_result = &s[sa.search_prefix(&*pat)];
+        let naive_result = naive_search_prefix(&*s, &*pat);
+        prop_assert!(sa_result == naive_result);
     }
 }
 
-#[test]
-fn suffix_array_search_all_basic() {
-    assert_search_all_correct!(b"" => b"");
-    assert_search_all_correct!(b"" => b"x");
-    assert_search_all_correct!(b"x" => b"");
-    assert_search_all_correct!(b"x" => b"x");
-    assert_search_all_correct!(b"11" => b"31112113");
-    assert_search_all_correct!(b"112" => b"31112113");
-    assert_search_all_correct!(b"114" => b"31112113");
-}
+fn bytes_with_pat(len: impl Strategy<Value=usize>) -> impl Strategy<Value=(Vec<u8>, Vec<u8>)> {
+    (len, 0.0..1.0).prop_flat_map(|(n, pat_ratio)| {
+        let m = (n as f64 * pat_ratio) as usize;
 
-#[test]
-fn suffix_array_search_all_random_samples() {
-    const SAMPLES: usize = 200;
-    const BYTES_LEN: Range<usize> = 0..200;
-    const PATTERN_LEN: Range<usize> = 0..4;
-    const TRAILING_LEN: Range<usize> = 0..2;
-    const SCALE: Range<u8> = 1..6;
+        let no_junk = (0..=n-m, bytes!(n..=n))
+            .prop_map(move |(i, s)| {
+                let pat = Vec::from(&s[i..i+m]);
+                (s, pat)
+            });
 
-    for _ in 0..SAMPLES {
-        let (sample_s, sample_pat) = gen_sample(BYTES_LEN, PATTERN_LEN, TRAILING_LEN, SCALE);
-        assert_search_all_correct!(&sample_pat[..] => &sample_s[..]);
-    }
-}
+        let trail_junk = (0..=n-m, bytes!(n..=n), bytes!(0..=m))
+            .prop_map(move |(i, s, mut junk)| {
+                let mut pat = Vec::from(&s[i..i+(m-junk.len())]);
+                pat.append(&mut junk);
+                (s, pat)
+            });
 
-#[test]
-fn suffix_array_search_prefix_basic() {
-    assert_search_prefix_correct!(b"" => b"");
-    assert_search_prefix_correct!(b"" => b"x");
-    assert_search_prefix_correct!(b"x" => b"");
-    assert_search_prefix_correct!(b"x" => b"x");
-    assert_search_prefix_correct!(b"11" => b"31112113");
-    assert_search_prefix_correct!(b"112" => b"31112113");
-    assert_search_prefix_correct!(b"114" => b"31112113");
-}
+        let all_junk = (bytes!(n..=n), bytes!(m..=m));
 
-#[test]
-fn suffix_array_search_prefix_random_samples() {
-    const SAMPLES: usize = 500;
-    const BYTES_LEN: Range<usize> = 0..500;
-    const PATTERN_LEN: Range<usize> = 0..8;
-    const TRAILING_LEN: Range<usize> = 0..8;
-    const SCALE: Range<u8> = 1..8;
-
-    for _ in 0..SAMPLES {
-        let (sample_s, sample_pat) = gen_sample(BYTES_LEN, PATTERN_LEN, TRAILING_LEN, SCALE);
-        assert_search_prefix_correct!(&sample_pat[..] => &sample_s[..]);
-    }
-}
-
-#[test]
-fn suffix_array_convertion_basic() {
-    assert_convertion_correct!(b"");
-    assert_convertion_correct!(b"\0");
-    assert_convertion_correct!(b"\xff");
-    assert_convertion_correct!(b"xxxxxxxx");
-    assert_convertion_correct!(b"xxxxoooo");
-    assert_convertion_correct!(b"baaccaaccaba");
-    assert_convertion_correct!(b"mmississiippii");
-}
-
-#[test]
-fn suffix_array_convertion_random_samples() {
-    const SAMPLES: usize = 1000;
-    const BYTES_LEN: Range<usize> = 0..1024;
-    const SCALE: Range<u8> = 1..16;
-
-    for _ in 0..SAMPLES {
-        let s = gen_bytes(BYTES_LEN, SCALE);
-        assert_convertion_correct!(&s[..]);
-    }
+        prop_oneof!(no_junk, trail_junk, all_junk)
+    })
 }
 
 fn naive_contains(s: &[u8], sub: &[u8]) -> bool {
@@ -173,28 +92,4 @@ fn naive_search_prefix<'s>(s: &[u8], sub: &'s [u8]) -> &'s [u8] {
         }
     }
     matched
-}
-
-fn gen_sample(
-    s: Range<usize>,
-    p: Range<usize>,
-    t: Range<usize>,
-    scale: Range<u8>,
-) -> (Vec<u8>, Vec<u8>) {
-    let bytes = gen_bytes(s, scale.clone());
-    let plen = p.start + random::<usize>() % (p.end - p.start);
-    let pstart = random::<usize>() % (bytes.len().saturating_sub(plen) + 1);
-    let mut pat: Vec<_> = bytes[pstart..Ord::min(bytes.len(), pstart + plen)].into();
-    pat.append(&mut gen_bytes(t, scale));
-    (bytes, pat)
-}
-
-fn gen_bytes(len: Range<usize>, scale: Range<u8>) -> Vec<u8> {
-    let n = len.start + random::<usize>() % (len.end - len.start);
-    let k = scale.start + random::<u8>() % (scale.end - scale.start);
-    let mut v = Vec::with_capacity(n);
-    for _ in 0..n {
-        v.push(random::<u8>() % k);
-    }
-    v
 }

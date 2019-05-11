@@ -16,8 +16,9 @@ data, focusing on space efficiency.
 """
 
 [dev-dependencies]
-rand = "0.6"
+rand = "*"
 criterion = "0.2"
+proptest = "0.9"
 
 [[bench]]
 name = "construct"

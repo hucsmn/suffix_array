@@ -11,6 +11,8 @@ mod sais_bytes;
 mod sais_ints_mut;
 mod utils;
 
+pub use sais_bytes::MAX_LENGTH;
+
 pub fn construct(s: &[u8], sa: &mut [u32]) {
     assert!(s.len() <= sais_bytes::MAX_LENGTH);
     assert!(s.len() + 1 == sa.len());
