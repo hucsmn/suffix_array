@@ -77,7 +77,8 @@ fn bench_by(
 ) {
     let mut data = Vec::with_capacity(LEN_SAMPLES);
     for _ in 0..LEN_SAMPLES {
-        let (s, p) = gen_sample(slen.clone(), plen.clone(), tlen.clone(), scale.clone());
+        let (s, p) =
+            gen_sample(slen.clone(), plen.clone(), tlen.clone(), scale.clone());
         data.push((s, p));
     }
 

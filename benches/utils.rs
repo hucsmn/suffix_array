@@ -12,7 +12,8 @@ pub fn gen_sample(
     let bytes = gen_bytes(s, scale.clone());
     let plen = p.start + random::<usize>() % (p.end - p.start);
     let pstart = random::<usize>() % (bytes.len().saturating_sub(plen) + 1);
-    let mut pat: Vec<_> = bytes[pstart..Ord::min(bytes.len(), pstart + plen)].into();
+    let mut pat: Vec<_> =
+        bytes[pstart..Ord::min(bytes.len(), pstart + plen)].into();
     pat.append(&mut gen_bytes(t, scale));
     (bytes, pat)
 }

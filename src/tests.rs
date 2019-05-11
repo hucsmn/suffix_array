@@ -41,22 +41,24 @@ proptest! {
     }
 }
 
-fn bytes_with_pat(len: impl Strategy<Value=usize>) -> impl Strategy<Value=(Vec<u8>, Vec<u8>)> {
+fn bytes_with_pat(
+    len: impl Strategy<Value = usize>,
+) -> impl Strategy<Value = (Vec<u8>, Vec<u8>)> {
     (len, 0.0..1.0).prop_flat_map(|(n, pat_ratio)| {
         let m = (n as f64 * pat_ratio) as usize;
 
-        let no_junk = (0..=n-m, bytes!(n..=n))
-            .prop_map(move |(i, s)| {
-                let pat = Vec::from(&s[i..i+m]);
-                (s, pat)
-            });
+        let no_junk = (0..=n - m, bytes!(n..=n)).prop_map(move |(i, s)| {
+            let pat = Vec::from(&s[i..i + m]);
+            (s, pat)
+        });
 
-        let trail_junk = (0..=n-m, bytes!(n..=n), bytes!(0..=m))
-            .prop_map(move |(i, s, mut junk)| {
-                let mut pat = Vec::from(&s[i..i+(m-junk.len())]);
+        let trail_junk = (0..=n - m, bytes!(n..=n), bytes!(0..=m)).prop_map(
+            move |(i, s, mut junk)| {
+                let mut pat = Vec::from(&s[i..i + (m - junk.len())]);
                 pat.append(&mut junk);
                 (s, pat)
-            });
+            },
+        );
 
         let all_junk = (bytes!(n..=n), bytes!(m..=m));
 

@@ -98,7 +98,9 @@ impl<'s> SuffixArray<'s> {
     /// Test if contains given sub-string.
     pub fn contains(&self, sub: &[u8]) -> bool {
         self.sa
-            .binary_search_by_key(&sub, |&i| truncate(&self.s[i as usize..], sub.len()))
+            .binary_search_by_key(&sub, |&i| {
+                truncate(&self.s[i as usize..], sub.len())
+            })
             .is_ok()
     }
 
@@ -132,7 +134,8 @@ impl<'s> SuffixArray<'s> {
     /// Search for one longest infix in the byte string that matches a prefix
     /// of the given pattern.
     pub fn search_prefix(&self, pat: &[u8]) -> Range<usize> {
-        let point = self.sa.binary_search_by(|&i| self.s[i as usize..].cmp(pat));
+        let point =
+            self.sa.binary_search_by(|&i| self.s[i as usize..].cmp(pat));
 
         match point {
             Ok(i) => {
