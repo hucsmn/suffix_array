@@ -7,15 +7,16 @@
 //! [Li, Z., Jian, L. and Huo, H. Optimal In-Place Suffix
 //! Sorting](https://arxiv.org/abs/1610.08305).
 
-mod sais_bytes;
-mod sais_ints_mut;
+mod llh_sais;
+mod sacak0;
 mod utils;
 
-pub use sais_bytes::MAX_LENGTH;
+pub use sacak0::MAX_LENGTH;
 
-pub fn construct(s: &[u8], sa: &mut [u32]) {
-    assert!(s.len() <= sais_bytes::MAX_LENGTH);
+/// Suffix array construction algorithm.
+pub fn saca(s: &[u8], sa: &mut [u32]) {
+    assert!(s.len() <= MAX_LENGTH);
     assert!(s.len() + 1 == sa.len());
 
-    sais_bytes::sais_bytes(s, sa);
+    sacak0::sacak0(s, sa, llh_sais::llh_sais);
 }

@@ -19,7 +19,6 @@ mod utils;
 mod tests;
 
 pub use construct::MAX_LENGTH;
-use construct::*;
 use std::ops::Range;
 use utils::*;
 
@@ -34,14 +33,14 @@ impl<'s> SuffixArray<'s> {
     // Construct new suffix array for a byte string.
     pub fn new(s: &'s [u8]) -> Self {
         let mut sa = vec![0; s.len() + 1];
-        construct(s, &mut sa[..]);
+        construct::saca(s, &mut sa[..]);
         SuffixArray { s, sa }
     }
 
     // Construct suffix array in place.
     pub fn set(&mut self, s: &'s [u8]) {
         self.sa.resize(s.len() + 1, 0);
-        construct(s, &mut self.sa[..]);
+        construct::saca(s, &mut self.sa[..]);
     }
 
     // Release the unused memory of suffix array.
@@ -99,7 +98,7 @@ impl<'s> SuffixArray<'s> {
     pub fn contains(&self, sub: &[u8]) -> bool {
         self.sa
             .binary_search_by_key(&sub, |&i| {
-                truncate(&self.s[i as usize..], sub.len())
+                trunc(&self.s[i as usize..], sub.len())
             })
             .is_ok()
     }
@@ -131,9 +130,9 @@ impl<'s> SuffixArray<'s> {
         &self.sa[i..j]
     }
 
-    /// Search for one longest infix in the byte string that matches a prefix
-    /// of the given pattern.
-    pub fn search_prefix(&self, pat: &[u8]) -> Range<usize> {
+    /// Search for one sub-string that has the longest common prefix of the
+    /// given pattern.
+    pub fn search_lcp(&self, pat: &[u8]) -> Range<usize> {
         let point =
             self.sa.binary_search_by(|&i| self.s[i as usize..].cmp(pat));
 
@@ -146,8 +145,8 @@ impl<'s> SuffixArray<'s> {
                 if i > 0 && i < self.sa.len() {
                     let j = self.sa[i - 1] as usize;
                     let k = self.sa[i] as usize;
-                    let a = common_prefix(pat, &self.s[j..]);
-                    let b = common_prefix(pat, &self.s[k..]);
+                    let a = lcp(pat, &self.s[j..]);
+                    let b = lcp(pat, &self.s[k..]);
                     if a > b {
                         j..j + a
                     } else {
@@ -155,7 +154,7 @@ impl<'s> SuffixArray<'s> {
                     }
                 } else if i == self.sa.len() {
                     let j = self.sa[i - 1] as usize;
-                    let a = common_prefix(pat, &self.s[j..]);
+                    let a = lcp(pat, &self.s[j..]);
                     j..j + a
                 } else {
                     self.s.len()..self.s.len()
@@ -163,8 +162,6 @@ impl<'s> SuffixArray<'s> {
             }
         }
     }
-
-    // TODO: LehmerCode encode/decode?
 }
 
 impl<'s> From<SuffixArray<'s>> for Vec<u32> {

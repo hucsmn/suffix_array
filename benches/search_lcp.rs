@@ -89,7 +89,7 @@ fn bench_by(
 
     b.iter(|| {
         for (sa, pat) in samples.iter() {
-            sa.search_prefix(pat);
+            sa.search_lcp(pat);
         }
     });
 }

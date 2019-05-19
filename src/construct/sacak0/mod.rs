@@ -1,5 +1,5 @@
 //! O(n) time and O(1) space SAIS algorithm for read-only byte string,
-//! which combines the recursion level 0 taken from [Ge Nong. 2013.
+//! as described in the recursion level 0 of [Ge Nong. 2013.
 //! Practical linear-time O(1)-workspace suffix sorting for constant
 //! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180) and
 //! the inner recursion level from Section 3 in [Li, Z., Jian, L. and Huo, H.
@@ -11,7 +11,6 @@ mod bucket;
 mod tests;
 
 use self::bucket::Bucket;
-use super::sais_ints_mut::sais_ints_mut;
 use super::utils::{for_each_lms, lms_substr_eq};
 
 // The empty symbol in workspace.
@@ -21,7 +20,10 @@ const EMPTY: u32 = 0xffffffff;
 pub const MAX_LENGTH: usize = 0xfffffffe;
 
 /// O(n) time and O(1) space SAIS algorithm for read-only byte string.
-pub fn sais_bytes(s: &[u8], sa: &mut [u32]) {
+pub fn sacak0<S>(s: &[u8], sa: &mut [u32], saca_u32: S)
+where
+    S: Fn(&mut [u32], usize, &mut [u32]),
+{
     debug_assert!(s.len() <= MAX_LENGTH);
     debug_assert!(s.len() + 1 == sa.len());
     if s.len() == 0 {
@@ -32,11 +34,14 @@ pub fn sais_bytes(s: &[u8], sa: &mut [u32]) {
     // allocate about 3k memory for bucket array to speed up recursion level 0
     let mut bkt = Bucket::compute(s);
 
-    sort_lms_suffixes(s, sa, bkt.as_mut());
+    sort_lms_suffixes(s, sa, bkt.as_mut(), saca_u32);
     induce_by_lms(s, sa, bkt.as_mut());
 }
 
-fn sort_lms_suffixes(s: &[u8], sa: &mut [u32], bkt: &mut Bucket) {
+fn sort_lms_suffixes<S>(s: &[u8], sa: &mut [u32], bkt: &mut Bucket, saca_u32: S)
+where
+    S: Fn(&mut [u32], usize, &mut [u32]),
+{
     // 1. place lms characters
     sa.iter_mut().for_each(|p| *p = EMPTY);
     for_each_lms(s, false, |i, _| bkt.insert_tail(s, sa, i));
@@ -93,7 +98,7 @@ fn sort_lms_suffixes(s: &[u8], sa: &mut [u32], bkt: &mut Bucket) {
                 t += 1;
             }
         }
-        sais_ints_mut(&mut head[..t], k, tail);
+        saca_u32(&mut head[..t], k, tail);
 
         // 5.b.2 rearrange the lms suffixes
         unsafe {

@@ -1,4 +1,4 @@
-use super::utils::common_prefix;
+use super::utils::lcp;
 use super::SuffixArray;
 use proptest::prelude::*;
 
@@ -33,10 +33,10 @@ proptest! {
     }
 
     #[test]
-    fn search_prefix_correctness((s, pat) in bytes_with_pat(0..1024_usize)) {
+    fn search_lcp_correctness((s, pat) in bytes_with_pat(0..1024_usize)) {
         let sa = SuffixArray::new(&*s);
-        let sa_result = &s[sa.search_prefix(&*pat)];
-        let naive_result = naive_search_prefix(&*s, &*pat);
+        let sa_result = &s[sa.search_lcp(&*pat)];
+        let naive_result = naive_search_lcp(&*s, &*pat);
         prop_assert!(sa_result == naive_result);
     }
 }
@@ -85,10 +85,10 @@ fn naive_search_all(s: &[u8], sub: &[u8]) -> Vec<u32> {
     result
 }
 
-fn naive_search_prefix<'s>(s: &[u8], sub: &'s [u8]) -> &'s [u8] {
+fn naive_search_lcp<'s>(s: &[u8], sub: &'s [u8]) -> &'s [u8] {
     let mut matched = &sub[..0];
     for i in 0..=s.len() {
-        let n = common_prefix(sub, &s[i..]);
+        let n = lcp(sub, &s[i..]);
         if n > matched.len() {
             matched = &sub[..n];
         }

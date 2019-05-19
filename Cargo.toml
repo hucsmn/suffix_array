@@ -33,5 +33,5 @@ name = "search_all"
 harness = false
 
 [[bench]]
-name = "search_prefix"
+name = "search_lcp"
 harness = false
