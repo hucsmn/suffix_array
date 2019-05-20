@@ -21,7 +21,7 @@ pub const MAX_LENGTH: usize = 0xfffffffc;
 /// O(n) time and O(1) space SAIS algorithm for writable integer string (s),
 /// whose alphabet scale (k) is usually large enough comparing to the string
 /// length.
-pub fn llh_sais(s: &mut [u32], k: usize, sa: &mut [u32]) {
+pub fn llhsais(s: &mut [u32], k: usize, sa: &mut [u32]) {
     debug_assert!(s.len() <= MAX_LENGTH);
     debug_assert!(s.len() + 1 == sa.len());
     if s.len() == 0 {
@@ -135,7 +135,7 @@ fn sort_lms_suffixes(s: &[u32], sa: &mut [u32]) {
                 t += 1;
             }
         }
-        llh_sais(&mut head[..t], k, tail);
+        llhsais(&mut head[..t], k, tail);
 
         // 5.b.2 rearrange the lms suffixes
         unsafe {

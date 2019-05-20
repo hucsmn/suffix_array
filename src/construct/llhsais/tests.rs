@@ -1,4 +1,4 @@
-use super::llh_sais;
+use super::llhsais;
 use proptest::prelude::*;
 
 proptest! {
@@ -17,7 +17,7 @@ fn ints(
 fn check(s: &mut [u32]) -> bool {
     let k = s.len();
     let mut sa = vec![0; s.len() + 1];
-    llh_sais(s, k, &mut sa[..]);
+    llhsais(s, k, &mut sa[..]);
     for i in 1..sa.len() {
         let x = &s[sa[i - 1] as usize..];
         let y = &s[sa[i] as usize..];

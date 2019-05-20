@@ -1,15 +1,11 @@
 //! Suffix array construction and searching algorithms for in-memory binary
 //! data, focusing on space efficiency.
 //!
-//! The suffix array construction algorithm is O(n) time and O(1) space, which
-//! combined the recursion level 0 of SACA-K as described in [Ge Nong. 2013.
+//! The suffix array construction algorithm is O(n) time and O(1) space, as
+//! described in [Ge Nong. 2013.
 //! Practical linear-time O(1)-workspace suffix sorting for constant
-//! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180) and a
-//! SAIS variant used in inner recursion levels that was developed by
-//! [Li, Z., Jian, L. and Huo, H. Optimal In-Place Suffix
-//! Sorting](https://arxiv.org/abs/1610.08305).
-//! Both of these two SAIS algorithms ran in linear-time and allocated constant
-//! workspace. There are no heap allocations, except for a bucket array (about
+//! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180).
+//! There are no heap allocations, except for a bucket array (about
 //! 3k memory) in the recursion level 0 for speeding up sorting.
 
 mod construct;

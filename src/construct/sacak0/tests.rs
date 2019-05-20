@@ -16,7 +16,7 @@ proptest! {
 
 fn check(s: &[u8]) -> bool {
     let mut sa = vec![0; s.len() + 1];
-    sacak0(s, &mut sa[..], naive_sort);
+    sacak0(s, &mut sa[..]);
     for i in 1..sa.len() {
         let x = &s[sa[i - 1] as usize..];
         let y = &s[sa[i] as usize..];
@@ -25,13 +25,4 @@ fn check(s: &[u8]) -> bool {
         }
     }
     true
-}
-
-fn naive_sort(s: &mut [u32], _: usize, sa: &mut [u32]) {
-    for (i, x) in (0..=s.len()).rev().enumerate() {
-        sa[i] = x as u32;
-    }
-
-    (&mut sa[1..])
-        .sort_by(|&i, &j| Ord::cmp(&s[i as usize..], &s[j as usize..]));
 }
