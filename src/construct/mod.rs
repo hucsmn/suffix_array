@@ -5,8 +5,8 @@
 //! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180).
 
 mod llhsais;
-mod sacak1;
 mod sacak0;
+mod sacak1;
 mod utils;
 
 pub use sacak0::MAX_LENGTH;

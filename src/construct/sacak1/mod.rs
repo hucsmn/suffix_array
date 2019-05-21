@@ -255,7 +255,7 @@ fn clear_lms(s: &[u32], sa: &mut [u32]) {
     for p in (1..sa.len()).rev() {
         if sa[p] > EMPTY {
             let n = -(sa[p] as i32) as usize;
-            sa[p+1-n..p+1].iter_mut().for_each(|i| *i = EMPTY);
+            sa[p + 1 - n..p + 1].iter_mut().for_each(|i| *i = EMPTY);
         }
     }
 }
@@ -266,7 +266,12 @@ fn clear_lms(s: &[u32], sa: &mut [u32]) {
 /// The cursor for suffix array scanning would be modified, when data chunk
 /// containing the cursor is moved.
 #[inline]
-fn insert_head(s: &[u32], sa: &mut [u32], mut ptr: Option<&mut usize>, i: usize) {
+fn insert_head(
+    s: &[u32],
+    sa: &mut [u32],
+    mut ptr: Option<&mut usize>,
+    i: usize,
+) {
     let p = s[i] as usize;
 
     if sa[p] < EMPTY {
@@ -274,35 +279,38 @@ fn insert_head(s: &[u32], sa: &mut [u32], mut ptr: Option<&mut usize>, i: usize)
         if p > 0 && p != lp {
             // (-n, indexes[..-1]), <borrowed-by-left-indexes> => (indexes), E
             let mut q = p;
-            while q < sa.len() && sa[q] < EMPTY && get_ptr(s, sa[q] as usize) == lp {
+            while q < sa.len()
+                && sa[q] < EMPTY
+                && get_ptr(s, sa[q] as usize) == lp
+            {
                 q -= 1;
             }
             if sa[q] > EMPTY {
                 let n = -(sa[q] as i32) as usize;
-                sa_move(sa, q+1, q, n, &mut ptr);
+                sa_move(sa, q + 1, q, n, &mut ptr);
                 sa[p] = EMPTY;
             }
         }
     }
 
     if sa[p] == EMPTY {
-        if p+1 >= sa.len() || sa[p+1] != EMPTY {
+        if p + 1 >= sa.len() || sa[p + 1] != EMPTY {
             // E, <bound> => i, <bound>
             sa[p] = i as u32;
         } else {
             // E, E => -1, i
             sa[p] = (-1i32) as u32;
-            sa[p+1] = i as u32;
+            sa[p + 1] = i as u32;
         }
     } else if sa[p] > EMPTY {
         let n = -(sa[p] as i32) as usize;
-        if p+1+n >= sa.len() || sa[p+1+n] != EMPTY {
+        if p + 1 + n >= sa.len() || sa[p + 1 + n] != EMPTY {
             // -n, indexes, <bound> => indexes, i, <bound>
-            sa_move(sa, p+1, p, n, &mut ptr);
-            sa[p+n] = i as u32;
+            sa_move(sa, p + 1, p, n, &mut ptr);
+            sa[p + n] = i as u32;
         } else {
             // -n, indexes, E => -(n+1), indexes, i
-            sa[p+1+n] = i as u32;
+            sa[p + 1 + n] = i as u32;
             sa[p] -= 1;
         }
     }
@@ -314,7 +322,12 @@ fn insert_head(s: &[u32], sa: &mut [u32], mut ptr: Option<&mut usize>, i: usize)
 /// The cursor for suffix array scanning would be modified, when data chunk
 /// containing the cursor is moved.
 #[inline]
-fn insert_tail(s: &[u32], sa: &mut [u32], mut ptr: Option<&mut usize>, i: usize) {
+fn insert_tail(
+    s: &[u32],
+    sa: &mut [u32],
+    mut ptr: Option<&mut usize>,
+    i: usize,
+) {
     let p = s[i] as usize;
 
     if sa[p] < EMPTY {
@@ -322,35 +335,38 @@ fn insert_tail(s: &[u32], sa: &mut [u32], mut ptr: Option<&mut usize>, i: usize)
         if p > 0 && p != rp {
             // <borrowed-by-left-indexes>, (indexes[1..], -n) => i, (indexes)
             let mut q = p;
-            while q < sa.len() && sa[q] < EMPTY && get_ptr(s, sa[q] as usize) == rp {
+            while q < sa.len()
+                && sa[q] < EMPTY
+                && get_ptr(s, sa[q] as usize) == rp
+            {
                 q += 1;
             }
             if sa[q] > EMPTY {
                 let n = -(sa[q] as i32) as usize;
-                sa_move(sa, p, p+1, n, &mut ptr);
+                sa_move(sa, p, p + 1, n, &mut ptr);
                 sa[p] = EMPTY;
             }
         }
     }
 
     if sa[p] == EMPTY {
-        if p <= 1 || sa[p-1] != EMPTY {
+        if p <= 1 || sa[p - 1] != EMPTY {
             // <bound>, E =>  <bound>, i
             sa[p] = i as u32;
         } else {
             // E, E => i, -1
             sa[p] = (-1i32) as u32;
-            sa[p-1] = i as u32;
+            sa[p - 1] = i as u32;
         }
     } else if sa[p] > EMPTY {
         let n = -(sa[p] as i32) as usize;
-        if p-1 <= n || sa[p-n-1] != EMPTY {
+        if p - 1 <= n || sa[p - n - 1] != EMPTY {
             // <bound>, indexes, -n => <bound>, i, indexes
-            sa_move(sa, p-n, p-n+1, n, &mut ptr);
-            sa[p-n] = i as u32;
+            sa_move(sa, p - n, p - n + 1, n, &mut ptr);
+            sa[p - n] = i as u32;
         } else {
             // E, indexes, -n => i, indexes, -(n+1)
-            sa[p-n-1] = i as u32;
+            sa[p - n - 1] = i as u32;
             sa[p] -= 1;
         }
     }
@@ -363,9 +379,13 @@ fn finish_head(sa: &mut [u32]) {
         if sa[p] > EMPTY {
             let n = -(sa[p] as i32) as usize;
             unsafe {
-                std::ptr::copy(&sa[p+1] as *const u32, &mut sa[p] as *mut u32, n);
+                std::ptr::copy(
+                    &sa[p + 1] as *const u32,
+                    &mut sa[p] as *mut u32,
+                    n,
+                );
             }
-            sa[p+n] = EMPTY;
+            sa[p + n] = EMPTY;
         }
     }
 }
@@ -377,24 +397,34 @@ fn finish_tail(sa: &mut [u32]) {
         if sa[p] > EMPTY {
             let n = -(sa[p] as i32) as usize;
             unsafe {
-                std::ptr::copy(&sa[p-n] as *const u32, &mut sa[p-n+1] as *mut u32, n);
+                std::ptr::copy(
+                    &sa[p - n] as *const u32,
+                    &mut sa[p - n + 1] as *mut u32,
+                    n,
+                );
             }
-            sa[p-n] = EMPTY;
+            sa[p - n] = EMPTY;
         }
     }
 }
 
 /// Move slice of workspace forward or backward.
-fn sa_move(sa: &mut [u32], src: usize, dst: usize, n: usize, ptr: &mut Option<&mut usize>) {
+fn sa_move(
+    sa: &mut [u32],
+    src: usize,
+    dst: usize,
+    n: usize,
+    ptr: &mut Option<&mut usize>,
+) {
     unsafe {
         std::ptr::copy(&sa[src] as *const u32, &mut sa[dst] as *mut u32, n);
     }
     if let Some(p) = std::mem::replace(ptr, None) {
         if *p >= src && *p < src + n {
             if dst >= src {
-                *p += dst-src;
+                *p += dst - src;
             } else {
-                *p -= src-dst;
+                *p -= src - dst;
             }
         }
         std::mem::replace(ptr, Some(p));

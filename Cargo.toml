@@ -19,22 +19,17 @@ data, focusing on space efficiency.
 llhsais = []
 
 [dev-dependencies]
-rand = "*"
+rand = "0.6"
+flate2 = "1"
+reqwest = "0.9"
 criterion = "0.2"
+rental = "0.5"
 proptest = "0.9"
 
 [[bench]]
-name = "construct"
+name = "sa_search"
 harness = false
 
 [[bench]]
-name = "contains"
-harness = false
-
-[[bench]]
-name = "search_all"
-harness = false
-
-[[bench]]
-name = "search_lcp"
+name = "sa_construct"
 harness = false
