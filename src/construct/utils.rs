@@ -44,28 +44,6 @@ where
     }
 }
 
-/// Visit all the typed characters (index, type, char) in reversed order.
-/// Length of the string must be greater than zero.
-#[inline]
-pub fn for_each_typed<T, F>(s: &[T], mut f: F)
-where
-    T: SaisChar,
-    F: FnMut(usize, bool, T),
-{
-    let mut t = false;
-    let mut r = s[s.len() - 1];
-    f(s.len() - 1, false, r);
-    for (i, &c) in s.iter().enumerate().rev().skip(1) {
-        if c > r {
-            t = false;
-        } else if c < r {
-            t = true;
-        }
-        f(i, t, c);
-        r = c;
-    }
-}
-
 /// Test lms substring equality.
 /// s[i..] and s[j..] must be lms substrings.
 #[inline]

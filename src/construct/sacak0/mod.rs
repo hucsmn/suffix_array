@@ -9,7 +9,7 @@ mod bucket;
 mod tests;
 
 use self::bucket::Bucket;
-use super::inner_level_saca;
+use super::sacak1::sacak1;
 use super::utils::{for_each_lms, lms_substr_eq};
 
 // The empty symbol in workspace.
@@ -91,7 +91,7 @@ fn sort_lms_suffixes(s: &[u8], sa: &mut [u32], bkt: &mut Bucket) {
                 t += 1;
             }
         }
-        inner_level_saca(&mut head[..t], k, tail);
+        sacak1(&mut head[..t], k, tail);
 
         // 5.b.2 rearrange the lms suffixes
         unsafe {
