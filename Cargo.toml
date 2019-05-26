@@ -16,6 +16,9 @@ data, focusing on space efficiency.
 
 [dependencies]
 rayon = { optional = true, version = "1.0" }
+bitpacking = { optional = true, version = "0.6" }
+serde = { optional = true, version = "1.0", features = ["derive"] }
+bincode = { optional = true, version = "1.1" }
 
 [dev-dependencies]
 rand = "0.6"
@@ -27,6 +30,7 @@ proptest = "0.9"
 
 [features]
 default = ["rayon"]
+pack = ["bitpacking", "serde", "bincode"]
 
 [[bench]]
 name = "sa_search"

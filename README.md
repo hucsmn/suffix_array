@@ -9,5 +9,5 @@ TODO
 * [x] Benchmark using [Pizza&Chili Corpus](http://pizzachili.dcc.uchile.cl).
 * [x] Compare LMS substrings in parallel.
 * [ ] Speed up searching by LCP array (enhanced suffix array).
-* [ ] Add compressed suffix array support.
-* [ ] Serialization/deserialization.
+* [ ] <del>Add compressed suffix array support.</del>
+* [x] Serialization/deserialization.

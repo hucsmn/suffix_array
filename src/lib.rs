@@ -11,12 +11,21 @@
 mod construct;
 mod utils;
 
+#[cfg(feature = "pack")]
+mod packed;
+
 #[cfg(test)]
 mod tests;
 
 pub use construct::MAX_LENGTH;
 use std::ops::Range;
 use utils::*;
+
+#[cfg(feature = "pack")]
+use std::path::Path;
+
+#[cfg(feature = "pack")]
+use std::io::{Read, Result, Write};
 
 /// Suffix array for searching byte strings.
 #[derive(Clone)]
@@ -71,8 +80,8 @@ impl<'s> SuffixArray<'s> {
     }
 
     /// Compose existed suffix array and its corresponding byte string
-    /// together without integrity checking.
-    pub unsafe fn from_parts_unchecked(s: &'s [u8], sa: Vec<u32>) -> Self {
+    /// together without integrity check.
+    pub unsafe fn unchecked_from_parts(s: &'s [u8], sa: Vec<u32>) -> Self {
         SuffixArray { s, sa }
     }
 
@@ -156,6 +165,114 @@ impl<'s> SuffixArray<'s> {
                     self.s.len()..self.s.len()
                 }
             }
+        }
+    }
+
+    /// Write the suffix array (without the byte string).
+    #[cfg(feature = "pack")]
+    pub fn dump<W: Write>(&self, file: W) -> Result<()> {
+        let psa = packed::PackedSuffixArray::from_sa(&self.sa[..]);
+        psa.dump(file)
+    }
+
+    /// Create a file and write the suffix array (without the byte string).
+    #[cfg(feature = "pack")]
+    pub fn dump_file<P: AsRef<Path>>(&self, name: P) -> Result<()> {
+        use std::fs::File;
+        use std::io::BufWriter;
+
+        let file = BufWriter::new(File::create(name)?);
+        let psa = packed::PackedSuffixArray::from_sa(&self.sa[..]);
+        psa.dump(file)
+    }
+
+    /// Dump the suffix array as bytes (without the byte string).
+    #[cfg(feature = "pack")]
+    pub fn dump_bytes(&self) -> Result<Vec<u8>> {
+        let psa = packed::PackedSuffixArray::from_sa(&self.sa[..]);
+        psa.dump_bytes()
+    }
+
+    /// Read suffix array without integrity check.
+    #[cfg(feature = "pack")]
+    pub unsafe fn unchecked_load<R: Read>(
+        s: &'s [u8],
+        file: R,
+    ) -> Result<Self> {
+        let psa = packed::PackedSuffixArray::load(file)?;
+        let sa = psa.into_sa();
+        Ok(Self::unchecked_from_parts(s, sa))
+    }
+
+    /// Read suffix array.
+    #[cfg(feature = "pack")]
+    pub fn load<R: Read>(s: &'s [u8], file: R) -> Result<Self> {
+        use std::io::{Error, ErrorKind};
+
+        let sa = unsafe { Self::unchecked_load(s, file)? };
+        if !sa.check_integrity() {
+            Err(Error::new(
+                ErrorKind::InvalidData,
+                "inconsistent suffix array",
+            ))
+        } else {
+            Ok(sa)
+        }
+    }
+
+    /// Read suffix array from a file without integrity check.
+    #[cfg(feature = "pack")]
+    pub unsafe fn unchecked_load_file<P: AsRef<Path>>(
+        s: &'s [u8],
+        name: P,
+    ) -> Result<Self> {
+        use std::fs::File;
+        use std::io::BufReader;
+
+        let file = BufReader::new(File::open(name)?);
+        Self::unchecked_load(s, file)
+    }
+
+    /// Read suffix array from a file.
+    #[cfg(feature = "pack")]
+    pub fn load_file<P: AsRef<Path>>(s: &'s [u8], name: P) -> Result<Self> {
+        use std::io::{Error, ErrorKind};
+
+        let sa = unsafe { Self::unchecked_load_file(s, name)? };
+        if !sa.check_integrity() {
+            Err(Error::new(
+                ErrorKind::InvalidData,
+                "inconsistent suffix array",
+            ))
+        } else {
+            Ok(sa)
+        }
+    }
+
+    /// Load suffix array from bytes without integrity check.
+    #[cfg(feature = "pack")]
+    pub unsafe fn unchecked_load_bytes(
+        s: &'s [u8],
+        bytes: &[u8],
+    ) -> Result<Self> {
+        let psa = packed::PackedSuffixArray::load_bytes(bytes)?;
+        let sa = psa.into_sa();
+        Ok(Self::unchecked_from_parts(s, sa))
+    }
+
+    /// Load suffix array from bytes.
+    #[cfg(feature = "pack")]
+    pub fn load_bytes(s: &'s [u8], bytes: &[u8]) -> Result<Self> {
+        use std::io::{Error, ErrorKind};
+
+        let sa = unsafe { Self::unchecked_load_bytes(s, bytes)? };
+        if !sa.check_integrity() {
+            Err(Error::new(
+                ErrorKind::InvalidData,
+                "inconsistent suffix array",
+            ))
+        } else {
+            Ok(sa)
         }
     }
 }
