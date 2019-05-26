@@ -1,6 +1,6 @@
 [package]
 name = "suffix_array"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["hucsmn <hucsmn@hotmail.com>"]
 edition = "2018"
 homepage = "https://github.com/hucsmn/suffix_array"
