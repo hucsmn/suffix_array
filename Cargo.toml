@@ -14,6 +14,9 @@ Suffix array construction and searching algorithms for in-memory binary
 data, focusing on space efficiency.
 """
 
+[dependencies]
+rayon = { optional = true, version = "1.0" }
+
 [dev-dependencies]
 rand = "0.6"
 flate2 = "1"
@@ -21,6 +24,9 @@ reqwest = "0.9"
 criterion = "0.2"
 rental = "0.5"
 proptest = "0.9"
+
+[features]
+default = ["rayon"]
 
 [[bench]]
 name = "sa_search"

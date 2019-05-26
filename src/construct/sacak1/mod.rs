@@ -97,63 +97,14 @@ fn sort_lms_suffixes(s: &[u32], sa: &mut [u32]) {
     }
     h -= 1;
     sa[h] = sa[0];
+
+    // 4. get the sorted lms suffixes from sorted lms substrings
     let (head, tail) = sa.split_at_mut(h);
-
-    // 4. rename lms substrings and get alphabet scale of the sub-problem
-    head.iter_mut().for_each(|i| *i = EMPTY);
-    let mut k = 0;
-    let mut j = tail[0];
-    for &i in tail.iter().skip(1) {
-        if !lms_substr_eq(s, i as usize, j as usize) {
-            k += 1;
-        }
-        head[i as usize / 2] = k as u32 - 1;
-        j = i;
-    }
-
-    // 5. sort then move the lms suffixes into the head of workspace
-    if k + 1 == tail.len() {
-        // 5.a. the order of lms suffixes is exactly the same as lms substrings
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                &tail[0] as *const u32,
-                &mut head[0] as *mut u32,
-                tail.len(),
-            );
-        }
-    } else {
-        // 5.b.1 construct and solve the sub-problem recursively
-        let mut t = 0;
-        for i in 0..h {
-            if head[i] != EMPTY {
-                head[t] = head[i];
-                t += 1;
-            }
-        }
-        sacak1(&mut head[..t], k, tail);
-
-        // 5.b.2 rearrange the lms suffixes
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                &tail[0] as *const u32,
-                &mut head[0] as *mut u32,
-                tail.len(),
-            );
-        }
-        let mut h = tail.len();
-        for_each_lms(s, true, |i, _| {
-            h -= 1;
-            tail[h] = i as u32;
-        });
-        for p in 0..tail.len() {
-            let i = head[p] as usize;
-            head[p] = tail[i];
-        }
-    }
-
-    // 6. place sorted lms suffixes to the bucket respectively
     let n = tail.len();
+    suffixes_from_substrs(s, head, tail, sacak1);
     sa[n..].iter_mut().for_each(|i| *i = EMPTY);
+
+    // 5. place sorted lms suffixes to the bucket respectively
     if n > 1 {
         let mut r = n;
         let mut q = s[sa[n - 1] as usize] as usize;

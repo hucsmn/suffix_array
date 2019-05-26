@@ -1,5 +1,5 @@
 /// Generic character type for the sais algorithm.
-pub trait SaisChar: Copy + Ord {
+pub trait SaisChar: Sync + Copy + Ord {
     fn zero() -> Self;
 }
 
@@ -44,10 +44,119 @@ where
     }
 }
 
+pub fn suffixes_from_substrs<'s, T, F>(s: &[T], head: &'s mut [u32], tail: &'s mut [u32], sort: F)
+where
+    T: SaisChar,
+    F: FnOnce(&mut [u32], usize, &mut [u32]),
+{
+    debug_assert_eq!(s.len() + 1, head.len() + tail.len());
+
+    // 1. rename lms substrings
+    let k = rename_substrs(s, head, tail);
+
+    // 2. sort lms suffixes
+    if k + 1 == tail.len() {
+        // lms substrings => lms suffixes
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                &tail[0] as *const u32,
+                &mut head[0] as *mut u32,
+                tail.len(),
+            );
+        }
+    } else {
+        // construct sub-problem
+        let mut t = 0;
+        for i in 0..head.len() {
+            if head[i] != 0xffffffff {
+                head[t] = head[i];
+                t += 1;
+            }
+        }
+
+        // solve sub-problem
+        sort(&mut head[..t], k, tail);
+
+        // rearrange the lms suffixes
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                &tail[0] as *const u32,
+                &mut head[0] as *mut u32,
+                tail.len(),
+            );
+        }
+        let mut h = tail.len();
+        for_each_lms(s, true, |i, _| {
+            h -= 1;
+            tail[h] = i as u32;
+        });
+        for p in 0..tail.len() {
+            let i = head[p] as usize;
+            head[p] = tail[i];
+        }
+    }
+}
+
+#[cfg(not(feature = "rayon"))]
+fn rename_substrs<T: SaisChar>(s: &[T], head: &mut [u32], tail: &mut [u32]) -> usize {
+    head.iter_mut().for_each(|i| *i = 0xffffffff);
+    let mut k = 0;
+    let mut j = tail[0];
+    for &i in tail.iter().skip(1) {
+        if !lms_substr_eq(s, i as usize, j as usize) {
+            k += 1;
+        }
+        head[i as usize / 2] = k as u32 - 1;
+        j = i;
+    }
+    k
+}
+
+#[cfg(feature = "rayon")]
+fn rename_substrs<T: SaisChar>(s: &[T], head: &mut [u32], tail: &mut [u32]) -> usize {
+    use rayon::prelude::*;
+
+    // compare in parallel and mark result in the most significant bit of head
+    head.iter_mut().for_each(|i| *i = 0xffffffff);
+    head[1..].par_iter_mut()
+        .zip(tail[1..].par_iter())
+        .zip(tail.par_iter())
+        .for_each(|((eq, i), j)| {
+            if !lms_substr_eq(s, *i as usize, *j as usize) {
+                *eq = 0x7fffffff;
+            }
+        });
+
+    // rename lms substrings
+    let mut k = 0;
+    for p in 1..tail.len() {
+        if head[p] & 0x80000000 == 0 {
+            k += 1;
+        }
+
+        debug_assert!(k as u32 - 1 < 0x7fffffff);
+        let i = tail[p] as usize / 2;
+        if i == 0 || i >= tail.len() {
+            head[i] = k as u32 - 1;
+        } else {
+            head[i] = (head[i] & 0x80000000) | (k as u32 - 1);
+        }
+    }
+    for p in 1..tail.len() {
+        let idx = head[p] & 0x7fffffff;
+        if idx == 0x7fffffff {
+            head[p] = 0xffffffff;
+        } else {
+            head[p] = idx;
+        }
+    }
+    k
+}
+
 /// Test lms substring equality.
 /// s[i..] and s[j..] must be lms substrings.
 #[inline]
-pub fn lms_substr_eq<T: SaisChar>(s: &[T], mut i: usize, mut j: usize) -> bool {
+fn lms_substr_eq<T: SaisChar>(s: &[T], mut i: usize, mut j: usize) -> bool {
     if i > j {
         std::mem::swap(&mut i, &mut j)
     }
