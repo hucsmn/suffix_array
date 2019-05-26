@@ -44,8 +44,13 @@ where
     }
 }
 
-pub fn suffixes_from_substrs<'s, T, F>(s: &[T], head: &'s mut [u32], tail: &'s mut [u32], sort: F)
-where
+/// Sort lms suffixes (in the head) from sorted lms substrings (in the tail).
+pub fn suffixes_from_substrs<'s, T, F>(
+    s: &[T],
+    head: &'s mut [u32],
+    tail: &'s mut [u32],
+    sort: F,
+) where
     T: SaisChar,
     F: FnOnce(&mut [u32], usize, &mut [u32]),
 {
@@ -97,8 +102,13 @@ where
     }
 }
 
+/// Rename lms substrings in sequence.
 #[cfg(not(feature = "rayon"))]
-fn rename_substrs<T: SaisChar>(s: &[T], head: &mut [u32], tail: &mut [u32]) -> usize {
+fn rename_substrs<T: SaisChar>(
+    s: &[T],
+    head: &mut [u32],
+    tail: &mut [u32],
+) -> usize {
     head.iter_mut().for_each(|i| *i = 0xffffffff);
     let mut k = 0;
     let mut j = tail[0];
@@ -112,13 +122,19 @@ fn rename_substrs<T: SaisChar>(s: &[T], head: &mut [u32], tail: &mut [u32]) -> u
     k
 }
 
+/// Rename lms substrings in parallel.
 #[cfg(feature = "rayon")]
-fn rename_substrs<T: SaisChar>(s: &[T], head: &mut [u32], tail: &mut [u32]) -> usize {
+fn rename_substrs<T: SaisChar>(
+    s: &[T],
+    head: &mut [u32],
+    tail: &mut [u32],
+) -> usize {
     use rayon::prelude::*;
 
     // compare in parallel and mark result in the most significant bit of head
     head.iter_mut().for_each(|i| *i = 0xffffffff);
-    head[1..].par_iter_mut()
+    head[1..]
+        .par_iter_mut()
         .zip(tail[1..].par_iter())
         .zip(tail.par_iter())
         .for_each(|((eq, i), j)| {

@@ -6,7 +6,7 @@
 #[cfg(test)]
 mod tests;
 
-use super::utils::*;
+use super::super::utils::*;
 
 /// Special symbol.
 const EMPTY: u32 = 0x80000000;
@@ -17,7 +17,7 @@ pub const MAX_LENGTH: usize = 0x7fffffff;
 /// O(n) time and O(1) space SAIS algorithm for writable integer string (s),
 /// whose alphabet scale (k) is usually large enough comparing to the string
 /// length.
-pub fn sacak1(s: &mut [u32], k: usize, sa: &mut [u32]) {
+pub fn sacak_u32s(s: &mut [u32], k: usize, sa: &mut [u32]) {
     debug_assert!(s.len() <= MAX_LENGTH);
     debug_assert!(s.len() + 1 == sa.len());
     if s.len() == 0 {
@@ -101,7 +101,7 @@ fn sort_lms_suffixes(s: &[u32], sa: &mut [u32]) {
     // 4. get the sorted lms suffixes from sorted lms substrings
     let (head, tail) = sa.split_at_mut(h);
     let n = tail.len();
-    suffixes_from_substrs(s, head, tail, sacak1);
+    suffixes_from_substrs(s, head, tail, sacak_u32s);
     sa[n..].iter_mut().for_each(|i| *i = EMPTY);
 
     // 5. place sorted lms suffixes to the bucket respectively

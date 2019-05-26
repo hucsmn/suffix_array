@@ -1,9 +1,9 @@
-use super::sacak1;
+use super::sacak_u32s;
 use proptest::prelude::*;
 
 proptest! {
     #[test]
-    fn sacak1_correctness(mut s in ints(1..8192_usize)) {
+    fn sacak_u32s_correctness(mut s in ints(1..8192_usize)) {
         prop_assert!(check(&mut s[..]));
     }
 }
@@ -17,7 +17,7 @@ fn ints(
 fn check(s: &mut [u32]) -> bool {
     let k = s.len();
     let mut sa = vec![0; s.len() + 1];
-    sacak1(s, k, &mut sa[..]);
+    sacak_u32s(s, k, &mut sa[..]);
     for i in 1..sa.len() {
         let x = &s[sa[i - 1] as usize..];
         let y = &s[sa[i] as usize..];

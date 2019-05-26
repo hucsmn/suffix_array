@@ -4,13 +4,14 @@
 //! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180).
 
 mod bucket;
+mod sacak_u32s;
 
 #[cfg(test)]
 mod tests;
 
 use self::bucket::Bucket;
-use super::sacak1::sacak1;
 use super::utils::*;
+use sacak_u32s::sacak_u32s;
 
 // The empty symbol in workspace.
 const EMPTY: u32 = 0xffffffff;
@@ -19,7 +20,7 @@ const EMPTY: u32 = 0xffffffff;
 pub const MAX_LENGTH: usize = 0xfffffffc;
 
 /// O(n) time and O(1) space SAIS algorithm for read-only byte string.
-pub fn sacak0(s: &[u8], sa: &mut [u32]) {
+pub fn sacak(s: &[u8], sa: &mut [u32]) {
     debug_assert!(s.len() <= MAX_LENGTH);
     debug_assert!(s.len() + 1 == sa.len());
     if s.len() == 0 {
@@ -62,7 +63,7 @@ fn sort_lms_suffixes(s: &[u8], sa: &mut [u32], bkt: &mut Bucket) {
     // 4. get the sorted lms suffixes from sorted lms substrings
     let (head, tail) = sa.split_at_mut(h);
     let n = tail.len();
-    suffixes_from_substrs(s, head, tail, sacak1);
+    suffixes_from_substrs(s, head, tail, sacak_u32s);
     sa[n..].iter_mut().for_each(|i| *i = EMPTY);
 
     // 5. place sorted lms suffixes to the bucket respectively
