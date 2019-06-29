@@ -8,13 +8,13 @@
 //! There are no heap allocations, except for a bucket array (about
 //! 3k memory) in the recursion level 0 for speeding up sorting.
 
-mod sa;
-mod utils;
 mod construct;
 #[cfg(feature = "pack")]
 mod packed_sa;
+mod sa;
 #[cfg(test)]
 mod tests;
+mod utils;
 
 pub use self::construct::MAX_LENGTH;
 pub use self::sa::SuffixArray;

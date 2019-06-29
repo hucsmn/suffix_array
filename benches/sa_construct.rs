@@ -10,11 +10,17 @@ fn sa_construct(crit: &mut Criterion) {
     let (samples, _) = make_data(dir.as_ref()).unwrap();
 
     for sname in samples.into_iter() {
-        eprintln!("loading sample {}...", sname);
-        let sdata = load_data(dir.as_ref(), sname).unwrap();
+        eprint!("loading sample {}...", sname);
+        let sdata;
+        if let Ok(tmp) = load_data(dir.as_ref(), sname) {
+            sdata = tmp;
+            eprintln!("yes");
+        } else {
+            eprintln!("pass");
+            continue;
+        }
 
-        let bench_name =
-            format!("sa_construct {} ({} bytes)", sname, sdata.len());
+        let bench_name = format!("saca {}", sname);
 
         set_criterion_samples(crit, calc_samples(sdata.len()));
 

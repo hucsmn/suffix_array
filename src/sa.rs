@@ -1,12 +1,12 @@
-use std::ops::Range;
 use super::construct::saca;
-use super::utils::{lcp, trunc};
-#[cfg(feature = "pack")]
-use std::path::Path;
-#[cfg(feature = "pack")]
-use std::io::{Read, Result, Write};
 #[cfg(feature = "pack")]
 use super::packed_sa::PackedSuffixArray;
+use super::utils::{lcp, trunc};
+#[cfg(feature = "pack")]
+use std::io::{Read, Result, Write};
+use std::ops::Range;
+#[cfg(feature = "pack")]
+use std::path::Path;
 
 /// Suffix array for searching byte strings.
 #[derive(Clone)]

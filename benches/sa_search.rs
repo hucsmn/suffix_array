@@ -23,15 +23,22 @@ rental! {
 use owned_sa::OwnedSA;
 
 macro_rules! search_method_bench {
-    ($name:ident, $method:ident) => {
+    ($name:ident, $label:expr, $method:ident) => {
         fn $name(crit: &mut Criterion) {
             let dir = env!("CARGO_MANIFEST_DIR").to_owned() + "/benches/data";
             eprintln!("preparing data in {}...", dir);
             let (samples, patterns) = make_data(dir.as_ref()).unwrap();
 
             for sname in samples.into_iter() {
-                eprintln!("loading sample {}...", sname);
-                let sdata = load_data(dir.as_ref(), sname).unwrap();
+                eprint!("loading sample {}...", sname);
+                let sdata;
+                if let Ok(tmp) = load_data(dir.as_ref(), sname) {
+                    sdata = tmp;
+                    eprintln!("yes");
+                } else {
+                    eprintln!("pass");
+                    continue;
+                }
                 let slen = sdata.len();
 
                 eprintln!("constructing sa...");
@@ -40,19 +47,18 @@ macro_rules! search_method_bench {
                 }));
 
                 for &pname in patterns.iter() {
-                    eprintln!("loading pattern {}...", pname);
-                    let pdata =
-                        load_pattern(dir.as_ref(), sname, pname).unwrap();
+                    eprint!("loading pattern {}...", pname);
+                    let pdata;
+                    if let Ok(tmp) = load_pattern(dir.as_ref(), sname, pname) {
+                        pdata = tmp;
+                        eprintln!("yes");
+                    } else {
+                        eprintln!("pass");
+                        continue;
+                    }
                     let plen = pdata.len();
 
-                    let bench_name = format!(
-                        "{} {} ({} bytes) ~ {} ({} bytes)",
-                        stringify!($name),
-                        sname,
-                        slen,
-                        pname,
-                        plen,
-                    );
+                    let bench_name = format!("{} {}~{}", $label, sname, pname);
 
                     set_criterion_samples(crit, calc_samples(slen, plen));
 
@@ -94,9 +100,9 @@ fn calc_samples(slen: usize, plen: usize) -> usize {
     }
 }
 
-search_method_bench!(sa_contains, contains);
-search_method_bench!(sa_search_all, search_all);
-search_method_bench!(sa_search_lcp, search_lcp);
+search_method_bench!(sa_contains, "constains", contains);
+search_method_bench!(sa_search_all, "search_all", search_all);
+search_method_bench!(sa_search_lcp, "search_lcp", search_lcp);
 
 criterion_group!(sa_search_benches, sa_contains, sa_search_all, sa_search_lcp);
 criterion_main!(sa_search_benches);
