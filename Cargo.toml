@@ -29,7 +29,8 @@ rental = "0.5"
 proptest = "0.9"
 
 [features]
-default = ["rayon"]
+default = ["parallel", "pack"]
+parallel = ["rayon"]
 pack = ["bitpacking", "serde", "bincode"]
 
 [[bench]]

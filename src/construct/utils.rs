@@ -103,7 +103,7 @@ pub fn suffixes_from_substrs<'s, T, F>(
 }
 
 /// Rename lms substrings in sequence.
-#[cfg(not(feature = "rayon"))]
+#[cfg(not(feature = "parallel"))]
 fn rename_substrs<T: SaisChar>(
     s: &[T],
     head: &mut [u32],
@@ -123,7 +123,7 @@ fn rename_substrs<T: SaisChar>(
 }
 
 /// Rename lms substrings in parallel.
-#[cfg(feature = "rayon")]
+#[cfg(feature = "parallel")]
 fn rename_substrs<T: SaisChar>(
     s: &[T],
     head: &mut [u32],

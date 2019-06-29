@@ -44,7 +44,7 @@ proptest! {
     #[test]
     fn pack_correctness(s in bytes!(0..4096_usize)) {
         use std::io::Cursor;
-    
+
         let sa1 = SuffixArray::new(&*s);
         let bytes1 = sa1.dump_bytes().unwrap();
         let mut bytes2 = Vec::with_capacity(bytes1.len());
