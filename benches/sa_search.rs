@@ -54,6 +54,8 @@ macro_rules! search_method_bench {
                         plen,
                     );
 
+                    set_criterion_samples(crit, calc_samples(slen, plen));
+
                     let osa = osa.clone();
                     crit.bench_function(bench_name.as_ref(), move |b| {
                         b.iter(|| {
@@ -66,6 +68,30 @@ macro_rules! search_method_bench {
             }
         }
     };
+}
+
+fn calc_samples(slen: usize, plen: usize) -> usize {
+    if slen <= 4096 {
+        1000
+    } else if slen <= 1024 * 1024 {
+        100
+    } else if slen <= 16 * 1024 * 1024 {
+        if plen <= 4096 {
+            100
+        } else if slen <= 1024 * 1024 {
+            10
+        } else {
+            3
+        }
+    } else {
+        if plen <= 4096 {
+            50
+        } else if slen <= 1024 * 1024 {
+            5
+        } else {
+            2
+        }
+    }
 }
 
 search_method_bench!(sa_contains, contains);

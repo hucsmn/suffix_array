@@ -16,25 +16,23 @@ fn sa_construct(crit: &mut Criterion) {
         let bench_name =
             format!("sa_construct {} ({} bytes)", sname, sdata.len());
 
-        let times;
-        if sdata.len() <= 4096 {
-            times = 200;
-        } else if sdata.len() <= 1024 * 1024 {
-            times = 20;
-        } else if sdata.len() <= 16 * 1024 * 1024 {
-            times = 8;
-        } else {
-            times = 3;
-        }
-
-        // dirty hack
-        let mut tmp = std::mem::replace(crit, Criterion::default());
-        tmp = tmp.sample_size(times);
-        std::mem::replace(crit, tmp);
+        set_criterion_samples(crit, calc_samples(sdata.len()));
 
         crit.bench_function(bench_name.as_ref(), move |b| {
             b.iter(|| SuffixArray::new(&sdata[..]));
         });
+    }
+}
+
+fn calc_samples(slen: usize) -> usize {
+    if slen <= 4096 {
+        100
+    } else if slen <= 1024 * 1024 {
+        10
+    } else if slen <= 16 * 1024 * 1024 {
+        3
+    } else {
+        2
     }
 }
 

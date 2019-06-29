@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use self::Length::{Fixed, Ratio};
+use criterion::Criterion;
 use flate2::read::GzDecoder;
 use rand::distributions::Uniform;
 use rand::{thread_rng, Rng};
@@ -13,94 +14,78 @@ use suffix_array::MAX_LENGTH;
 const SEPARATOR: &'static str = "~";
 
 static RANDOM_DATA_STATS: &[(&str, u8, usize)] = &[
-    ("random-small-s", 8, 128),
-    ("random-ascii-s", 127, 128),
-    ("random-bin-s", 255, 128),
-    /*
-        ("random-small-m", 8, 1024),
-        ("random-ascii-m", 127, 1024),
-        ("random-bin-m", 255, 1024),
-    */
-    ("random-small-l", 8, 65536),
-    ("random-ascii-l", 127, 65536),
-    ("random-bin-l", 255, 65536),
-    ("random-small-xl", 8, 4 * 1024 * 1024),
-    ("random-ascii-xl", 127, 4 * 1024 * 1024),
-    ("random-bin-xl", 255, 4 * 1024 * 1024),
-    ("random-small-2xl", 8, 16 * 1024 * 1024),
-    ("random-ascii-2xl", 127, 16 * 1024 * 1024),
-    ("random-bin-2xl", 255, 16 * 1024 * 1024),
-    ("random-small-3xl", 8, 50 * 1024 * 1024),
-    ("random-ascii-3xl", 127, 50 * 1024 * 1024),
-    ("random-bin-3xl", 255, 50 * 1024 * 1024),
-    /*
-        ("random-small-4xl", 8, 100 * 1024 * 1024),
-        ("random-ascii-4xl", 127, 100 * 1024 * 1024),
-        ("random-bin-4xl", 255, 100 * 1024 * 1024),
-    */
+    ("oct-128b", 8, 128),
+    ("txt-128b", 127, 128),
+    ("bin-128b", 255, 128),
+    ("oct-4k", 8, 4096),
+    ("txt-4k", 127, 4096),
+    ("bin-4k", 255, 4096),
+    ("oct-64k", 8, 65536),
+    ("txt-64k", 127, 65536),
+    ("bin-64k", 255, 65536),
+    ("oct-4m", 8, 4194304),
+    ("txt-4m", 127, 4194304),
+    ("bin-4m", 255, 4194304),
+    ("oct-16m", 8, 16777216),
+    ("txt-16m", 127, 16777216),
+    ("bin-16m", 255, 16777216),
+    ("oct-50m", 8, 52428800),
+    ("txt-50m", 127, 52428800),
+    ("bin-50m", 255, 52428800),
 ];
 
 static PIZZA_CHILI_URLS: &[(&str, &str, bool)] = &[
     (
-        "dna-50m",
+        "pcc-dna",
         "http://pizzachili.dcc.uchile.cl/texts/dna/dna.50MB.gz",
         true,
     ),
     (
-        "proteins-50m",
+        "pcc-proteins",
         "http://pizzachili.dcc.uchile.cl/texts/protein/proteins.50MB.gz",
         true,
     ),
     (
-        "english-50m",
+        "pcc-english",
         "http://pizzachili.dcc.uchile.cl/texts/nlang/english.50MB.gz",
         true,
     ),
     (
-        "xml-50m",
+        "pcc-xml",
         "http://pizzachili.dcc.uchile.cl/texts/xml/dblp.xml.50MB.gz",
         true,
     ),
     (
-        "sources-50m",
+        "pcc-sources",
         "http://pizzachili.dcc.uchile.cl/texts/code/sources.50MB.gz",
         true,
     ),
     (
-        "pitches-50m",
+        "pcc-pitches",
         "http://pizzachili.dcc.uchile.cl/texts/music/pitches.50MB.gz",
         true,
     ),
 ];
 
 static PATTERN_SCHEMES: &[(&str, Length, Length)] = &[
-    ("s-0junk", Fixed(8), Fixed(0)),
-    ("s-50junk", Fixed(8), Fixed(4)),
-    ("s-100junk", Fixed(8), Fixed(8)),
-    ("m-0junk", Fixed(128), Fixed(0)),
-    ("m-50junk", Fixed(128), Fixed(64)),
-    ("m-100junk", Fixed(128), Fixed(128)),
-    /*
-        ("l-0junk", Fixed(4096), Fixed(0)),
-        ("l-50junk", Fixed(4096), Fixed(2048)),
-        ("l-100junk", Fixed(4096), Fixed(4096)),
-
-        ("xl-0junk", Ratio(0.1), Fixed(0)),
-        ("xl-50junk", Ratio(0.1), Ratio(0.5)),
-        ("xl-100junk", Ratio(0.1), Ratio(1.0)),
-
-        ("2xl-0junk", Ratio(0.33), Fixed(0)),
-        ("2xl-50junk", Ratio(0.33), Ratio(0.5)),
-        ("2xl-100junk", Ratio(0.33), Ratio(1.0)),
-
-        ("3xl-0junk", Ratio(0.66), Fixed(0)),
-        ("3xl-50junk", Ratio(0.66), Ratio(0.5)),
-        ("3xl-100junk", Ratio(0.66), Ratio(1.0)),
-
-        ("4xl-0junk", Ratio(0.95), Fixed(0)),
-        ("4xl-50junk", Ratio(0.95), Ratio(0.5)),
-        ("4xl-100junk", Ratio(0.95), Ratio(1.0)),
-    */
+    ("select-8b", Fixed(8), Fixed(0)),
+    ("hybrid-8b", Fixed(8), Fixed(4)),
+    ("random-8b", Fixed(8), Fixed(8)),
+    ("select-128b", Fixed(128), Fixed(0)),
+    ("hybrid-128b", Fixed(128), Fixed(64)),
+    ("random-128b", Fixed(128), Fixed(128)),
+    ("select-4k", Fixed(4096), Fixed(0)),
+    ("hybrid-4k", Fixed(4096), Fixed(2048)),
+    ("random-4k", Fixed(4096), Fixed(4096)),
+    ("select-20%", Ratio(0.2), Fixed(0)),
+    ("hybrid-20%", Ratio(0.2), Ratio(0.5)),
+    ("random-20%", Ratio(0.2), Ratio(1.0)),
+    ("select-50%", Ratio(0.5), Fixed(0)),
+    ("hybrid-50%", Ratio(0.5), Ratio(0.5)),
+    ("random-50%", Ratio(0.5), Ratio(1.0)),
+    ("select-95%", Ratio(0.95), Fixed(0)),
+    ("hybrid-95%", Ratio(0.95), Ratio(0.5)),
+    ("random-95%", Ratio(0.95), Ratio(1.0)),
 ];
 
 #[derive(Clone, Copy)]
@@ -235,4 +220,15 @@ fn random_select(len: usize, buf: &[u8]) -> &[u8] {
     let mut rng = thread_rng();
     let i = rng.sample(uni);
     &buf[i..i + len]
+}
+
+// dirty hack
+pub fn set_criterion_samples(crit: &mut Criterion, mut n: usize) {
+    if n < 2 {
+        n = 2;
+    }
+
+    let mut tmp = std::mem::replace(crit, Criterion::default());
+    tmp = tmp.sample_size(n);
+    std::mem::replace(crit, tmp);
 }
