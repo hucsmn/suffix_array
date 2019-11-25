@@ -62,13 +62,7 @@ pub fn suffixes_from_substrs<'s, T, F>(
     // 2. sort lms suffixes
     if k + 1 == tail.len() {
         // lms substrings => lms suffixes
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                &tail[0] as *const u32,
-                &mut head[0] as *mut u32,
-                tail.len(),
-            );
-        }
+        &head[0..tail.len()].copy_from_slice(tail);
     } else {
         // construct sub-problem
         let mut t = 0;
@@ -83,13 +77,8 @@ pub fn suffixes_from_substrs<'s, T, F>(
         sort(&mut head[..t], k, tail);
 
         // rearrange the lms suffixes
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                &tail[0] as *const u32,
-                &mut head[0] as *mut u32,
-                tail.len(),
-            );
-        }
+        &head[0..tail.len()].copy_from_slice(tail);
+
         let mut h = tail.len();
         for_each_lms(s, true, |i, _| {
             h -= 1;
