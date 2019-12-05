@@ -122,13 +122,7 @@ fn sort_lms_suffixes(s: &[u32], sa: &mut [u32]) {
                 sa[q] = tmp;
             } else {
                 let t = q + 1 - m;
-                unsafe {
-                    std::ptr::copy(
-                        &sa[l] as *const u32,
-                        &mut sa[t] as *mut u32,
-                        m,
-                    );
-                }
+                sa.copy_within(l..l+m, t);
                 sa[l..Ord::min(r, t)].iter_mut().for_each(|i| *i = EMPTY);
             }
 
@@ -329,13 +323,7 @@ fn finish_head(sa: &mut [u32]) {
     for p in 1..sa.len() {
         if sa[p] > EMPTY {
             let n = -(sa[p] as i32) as usize;
-            unsafe {
-                std::ptr::copy(
-                    &sa[p + 1] as *const u32,
-                    &mut sa[p] as *mut u32,
-                    n,
-                );
-            }
+            sa.copy_within(p+1..p+n+1, p);
             sa[p + n] = EMPTY;
         }
     }
@@ -347,13 +335,7 @@ fn finish_tail(sa: &mut [u32]) {
     for p in (1..sa.len()).rev() {
         if sa[p] > EMPTY {
             let n = -(sa[p] as i32) as usize;
-            unsafe {
-                std::ptr::copy(
-                    &sa[p - n] as *const u32,
-                    &mut sa[p - n + 1] as *mut u32,
-                    n,
-                );
-            }
+            sa.copy_within(p-n..p, p-n+1);
             sa[p - n] = EMPTY;
         }
     }
@@ -367,9 +349,8 @@ fn sa_move(
     n: usize,
     ptr: &mut Option<&mut usize>,
 ) {
-    unsafe {
-        std::ptr::copy(&sa[src] as *const u32, &mut sa[dst] as *mut u32, n);
-    }
+    sa.copy_within(src..src+n, dst);
+
     if let Some(p) = std::mem::replace(ptr, None) {
         if *p >= src && *p < src + n {
             if dst >= src {
