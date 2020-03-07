@@ -17,5 +17,6 @@ TODO
 * [ ] <del>Add compressed suffix array support.</del>
 * [x] Serialization/deserialization.
 * [ ] **Rewrite suffix array construction algorithm (try to parallelize SACA-K according to
-      [recent parallelization efforts on SAIS](https://link.springer.com/article/10.1007/s11227-018-2395-5),
-      or simply switch the suffix array construction to Amos Wenger's [hand-ported divsufsort in rust](https://crates.io/crates/divsufsort).**
+      the recent parallelization efforts on [SAIS](https://link.springer.com/article/10.1007/s11227-018-2395-5) and
+      SACK-K ([[1]](https://ieeexplore.ieee.org/document/8371211), [[2]](https://link.springer.com/chapter/10.1007%2F978-981-15-2767-8_30)) by Bin Lao.
+      Or simply switch the suffix array construction slgorithm to Amos Wenger's [hand-ported](https://crates.io/crates/divsufsort) divsufsort or the [C binding](https://crates.io/crates/cdivsufsort).**
