@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::io::prelude::*;
 use std::io::Result;
 
-// Little endian of b"SA4x", i.e. Compressed Suffix Array using BitPacker4x.
+// Little endian of b"SA4x", i.e. the Packed Suffix Array using BitPacker4x.
 const MAGIC_CSA4: u32 = 2016690515;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
