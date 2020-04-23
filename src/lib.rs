@@ -1,12 +1,12 @@
 //! Suffix array construction and searching algorithms for in-memory binary
 //! data, focusing on space efficiency.
 //!
-//! The suffix array construction algorithm is O(n) time and O(1) space, as
-//! described in [Ge Nong. 2013.
-//! Practical linear-time O(1)-workspace suffix sorting for constant
-//! alphabets.](https://dl.acm.org/citation.cfm?doid=2493175.2493180).
-//! There are no heap allocations, except for a bucket array (about
-//! 3k memory) in the recursion level 0 for speeding up sorting.
+//! The suffix array construction algorithm is guaranteed to be O(n) time
+//! and O(1) space.
+//! 
+//! For now, this crate uses the [C bindings by Amos Wenger](https://crates.io/crates/cdivsufsort)
+//! to [Yuta Mori's dissufsort](https://github.com/y-256/libdivsufsort),
+//! which is the fastest known SACA running in single thread with only O(1) additional workspace.
 
 mod saca;
 #[cfg(feature = "pack")]
