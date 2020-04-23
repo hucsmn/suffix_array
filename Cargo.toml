@@ -15,10 +15,10 @@ data.
 """
 
 [dependencies]
-rayon = { optional = true, version = "1.0" }
-bitpacking = { optional = true, version = "0.6" }
+cdivsufsort = "2.0"
+bitpacking = { optional = true, version = "0.8" }
 serde = { optional = true, version = "1.0", features = ["derive"] }
-bincode = { optional = true, version = "1.1" }
+bincode = { optional = true, version = "1.2" }
 
 [dev-dependencies]
 rand = "0.6"
@@ -29,8 +29,7 @@ rental = "0.5"
 proptest = "0.9"
 
 [features]
-default = ["parallel", "pack"]
-parallel = ["rayon"]
+default = ["pack"]
 pack = ["bitpacking", "serde", "bincode"]
 
 [[bench]]

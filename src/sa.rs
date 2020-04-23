@@ -1,4 +1,4 @@
-use super::construct::saca;
+use super::saca::saca;
 #[cfg(feature = "pack")]
 use super::packed_sa::PackedSuffixArray;
 use super::utils::{lcp, trunc};
