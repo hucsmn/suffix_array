@@ -15,21 +15,10 @@ use suffix_array::MAX_LENGTH;
 const SEPARATOR: &'static str = "~";
 
 static RANDOM_DATA_STATS: &[(&str, u8, usize)] = &[
-    ("qua-128b", 4, 128),
-    ("txt-128b", 127, 128),
-    ("bin-128b", 255, 128),
-    ("qua-4k", 4, 4096),
-    ("txt-4k", 127, 4096),
-    ("bin-4k", 255, 4096),
-    ("qua-64k", 4, 65536),
-    ("txt-64k", 127, 65536),
-    ("bin-64k", 255, 65536),
-    ("qua-4m", 4, 4194304),
-    ("txt-4m", 127, 4194304),
-    ("bin-4m", 255, 4194304),
-    ("qua-16m", 4, 16777216),
-    ("txt-16m", 127, 16777216),
-    ("bin-16m", 255, 16777216),
+    // (sample_name, alphabet, length)
+    ("random-128k", 255, 128 * 1024),
+    ("random-50m", 255, 50 * 1024 * 1024),
+    ("random-200m", 255, 200 * 1024 * 1024),
 ];
 
 static PIZZA_CHILI_URLS: &[(&str, &str, bool)] = &[
@@ -39,42 +28,35 @@ static PIZZA_CHILI_URLS: &[(&str, &str, bool)] = &[
         true,
     ),
     (
-        "pr-50m",
-        "http://pizzachili.dcc.uchile.cl/texts/protein/proteins.50MB.gz",
+        "dna-200m",
+        "http://pizzachili.dcc.uchile.cl/texts/dna/dna.200MB.gz",
         true,
     ),
     (
-        "en-50m",
+        "english-50m",
         "http://pizzachili.dcc.uchile.cl/texts/nlang/english.50MB.gz",
         true,
     ),
     (
-        "xml-50m",
-        "http://pizzachili.dcc.uchile.cl/texts/xml/dblp.xml.50MB.gz",
-        true,
-    ),
-    (
-        "code-50m",
-        "http://pizzachili.dcc.uchile.cl/texts/code/sources.50MB.gz",
-        true,
-    ),
-    (
-        "midi-50m",
-        "http://pizzachili.dcc.uchile.cl/texts/music/pitches.50MB.gz",
+        "english-200m",
+        "http://pizzachili.dcc.uchile.cl/texts/nlang/english.200MB.gz",
         true,
     ),
 ];
 
 static PATTERN_SCHEMES: &[(&str, DataLength, PatternLength, PatternLength)] = &[
-    ("select-8b", Unlimited, Fixed(8), Fixed(0)),
-    ("hybrid-8b", Till(16777216), Fixed(8), Fixed(4)),
-    ("random-8b", Till(65536), Fixed(8), Fixed(8)),
-    ("select-128b", Ranged(4096, 4194304), Fixed(128), Fixed(0)),
-    ("hybrid-128b", Ranged(4096, 4194304), Fixed(128), Fixed(64)),
-    ("random-128b", Ranged(4096, 4194304), Fixed(128), Fixed(128)),
-    ("select-10%", Since(16777216), Ratio(0.1), Fixed(0)),
-    ("hybrid-10%", Since(16777216), Ratio(0.1), Ratio(0.5)),
-    ("random-10%", Since(16777216), Ratio(0.1), Ratio(1.0)),
+    // (pattern_name, sample_length_filter, final_pattern_length, random_trailing_junk)
+    ("select-32b", Unlimited, Fixed(32), Fixed(0)),
+    ("hybrid-32b", Till(1024 * 1024), Fixed(32), Fixed(16)),
+    ("select-4k", Unlimited, Fixed(4 * 1024), Fixed(0)),
+    (
+        "hybrid-4k",
+        Till(1024 * 1024),
+        Fixed(4 * 1024),
+        Fixed(2 * 1024),
+    ),
+    ("select-5%", Since(1024 * 1024), Ratio(0.05), Fixed(0)),
+    ("hybrid-5%", Since(1024 * 1024), Ratio(0.05), Ratio(0.5)),
 ];
 
 #[derive(Clone, Copy)]

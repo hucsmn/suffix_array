@@ -35,7 +35,3 @@ pack = ["bitpacking", "serde", "bincode"]
 [[bench]]
 name = "sa_search"
 harness = false
-
-[[bench]]
-name = "sa_construct"
-harness = false

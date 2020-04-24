@@ -1,6 +1,6 @@
-use super::saca::saca;
 #[cfg(feature = "pack")]
 use super::packed_sa::PackedSuffixArray;
+use super::saca::saca;
 use super::utils::{lcp, trunc};
 #[cfg(feature = "pack")]
 use std::io::{Read, Result, Write};

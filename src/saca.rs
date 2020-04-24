@@ -1,6 +1,6 @@
 use std::slice::from_raw_parts_mut;
 
-use cdivsufsort::{sort_in_place as dss};
+use cdivsufsort::sort_in_place as dss;
 
 /// Maximum length of the input string.
 pub const MAX_LENGTH: usize = std::i32::MAX as usize;
