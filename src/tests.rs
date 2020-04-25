@@ -1,5 +1,6 @@
 use super::utils::lcp;
 use super::SuffixArray;
+
 use proptest::prelude::*;
 
 macro_rules! bytes {

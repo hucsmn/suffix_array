@@ -1,31 +1,33 @@
+use std::ops::Range;
+#[cfg(feature = "pack")]
+use std::{
+    io::{Read, Result, Write},
+    path::Path,
+};
+
 #[cfg(feature = "pack")]
 use super::packed_sa::PackedSuffixArray;
 use super::saca::saca;
-use super::utils::{lcp, trunc};
-#[cfg(feature = "pack")]
-use std::io::{Read, Result, Write};
-use std::ops::Range;
-#[cfg(feature = "pack")]
-use std::path::Path;
+use super::utils::*;
 
-/// Suffix array for searching byte strings.
+/// Suffix array for byte string.
 #[derive(Clone)]
-pub struct SuffixArray<'s> {
-    s: &'s [u8],
+pub struct SuffixArray<'a> {
+    s: &'a [u8],
     sa: Vec<u32>,
     bkt: Option<Vec<u32>>,
 }
 
-impl<'s> SuffixArray<'s> {
-    // Construct new suffix array for a byte string.
-    pub fn new(s: &'s [u8]) -> Self {
+impl<'a> SuffixArray<'a> {
+    // Construct new suffix array for given byte string.
+    pub fn new(s: &'a [u8]) -> Self {
         let mut sa = vec![0; s.len() + 1];
         saca(s, &mut sa[..]);
         SuffixArray { s, sa, bkt: None }
     }
 
     // Construct suffix array in place.
-    pub fn set(&mut self, s: &'s [u8]) {
+    pub fn set(&mut self, s: &'a [u8]) {
         self.sa.resize(s.len() + 1, 0);
         saca(s, &mut self.sa[..]);
     }
@@ -46,13 +48,13 @@ impl<'s> SuffixArray<'s> {
     }
 
     /// Take out the suffix array and its corresponding byte string.
-    pub fn into_parts(self) -> (&'s [u8], Vec<u32>) {
+    pub fn into_parts(self) -> (&'a [u8], Vec<u32>) {
         (self.s, self.sa)
     }
 
     /// Compose existed suffix array and its corresponding byte string
     /// together, and checks the integrity.
-    pub fn from_parts(s: &'s [u8], sa: Vec<u32>) -> Option<Self> {
+    pub fn from_parts(s: &'a [u8], sa: Vec<u32>) -> Option<Self> {
         let compose = SuffixArray { s, sa, bkt: None };
         if compose.check_integrity() {
             Some(compose)
@@ -63,7 +65,7 @@ impl<'s> SuffixArray<'s> {
 
     /// Compose existed suffix array and its corresponding byte string
     /// together without integrity check.
-    pub unsafe fn unchecked_from_parts(s: &'s [u8], sa: Vec<u32>) -> Self {
+    pub unsafe fn unchecked_from_parts(s: &'a [u8], sa: Vec<u32>) -> Self {
         SuffixArray { s, sa, bkt: None }
     }
 
@@ -81,12 +83,18 @@ impl<'s> SuffixArray<'s> {
         true
     }
 
-    /// Enable the internal buckets to speed up searching.
+    /// Enable bucket pointers to speed up large amount of pattern searching.
+    ///
+    /// The overhead is about 257 KiB.
     pub fn enable_buckets(&mut self) {
         if self.bkt.is_some() {
             return;
         }
+
+        // the layout is [$; (0, $), (0, 0), ..., (0, 255); ...; (255, $), (255, 0), ..., (255, 255)]
         let mut bkt = vec![0; 256 * 257 + 1];
+
+        // count occurrences.
         bkt[0] = 1;
         if self.s.len() > 0 {
             for i in 0..self.s.len() - 1 {
@@ -100,6 +108,7 @@ impl<'s> SuffixArray<'s> {
             bkt[idx] += 1;
         }
 
+        // store the right boundaries of each bucket.
         let mut sum = 0;
         for p in bkt.iter_mut() {
             sum += *p;
@@ -109,7 +118,7 @@ impl<'s> SuffixArray<'s> {
         self.bkt = Some(bkt);
     }
 
-    /// Get bucket of the suffix array to search the given pattern.
+    /// Get the bucket of pattern.
     #[inline]
     fn get_bucket(&self, pat: &[u8]) -> Range<usize> {
         if let Some(ref bkt) = self.bkt {
@@ -134,7 +143,7 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    /// Get top-level bucket of the suffix array to search the given pattern.
+    /// Get the top-level bucket.
     #[inline]
     fn get_top_bucket(&self, pat: &[u8]) -> Range<usize> {
         if let Some(ref bkt) = self.bkt {
@@ -151,7 +160,7 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    /// Test if contains given pattern.
+    /// Test if it contains the given pattern.
     pub fn contains(&self, pat: &[u8]) -> bool {
         let s = self.s;
         let sa = &self.sa[self.get_bucket(pat)];
@@ -160,7 +169,7 @@ impl<'s> SuffixArray<'s> {
             .is_ok()
     }
 
-    /// Search for all the unsorted overlapping occurrence of given pattern.
+    /// Search for all the unsorted occurrence of given pattern (can overlap).
     pub fn search_all(&self, pat: &[u8]) -> &[u32] {
         let s = self.s;
         let sa = if pat.len() > 0 {
@@ -194,8 +203,7 @@ impl<'s> SuffixArray<'s> {
         &sa[i..j]
     }
 
-    /// Search for a sub-string that has the longest common prefix of the
-    /// given pattern.
+    /// Search for a sub-string that has the longest common prefix of the given pattern.
     pub fn search_lcp(&self, pat: &[u8]) -> Range<usize> {
         let s = self.s;
         let sa = &self.sa[self.get_bucket(pat)];
@@ -244,14 +252,14 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    /// Write the suffix array (without the byte string).
+    /// Dump the suffix array.
     #[cfg(feature = "pack")]
     pub fn dump<W: Write>(&self, file: W) -> Result<()> {
         let psa = PackedSuffixArray::from_sa(&self.sa[..]);
         psa.dump(file)
     }
 
-    /// Create a file and write the suffix array (without the byte string).
+    /// Create a file and write the suffix array.
     #[cfg(feature = "pack")]
     pub fn dump_file<P: AsRef<Path>>(&self, name: P) -> Result<()> {
         use std::fs::File;
@@ -262,17 +270,17 @@ impl<'s> SuffixArray<'s> {
         psa.dump(file)
     }
 
-    /// Dump the suffix array as bytes (without the byte string).
+    /// Dump the suffix array as bytes.
     #[cfg(feature = "pack")]
     pub fn dump_bytes(&self) -> Result<Vec<u8>> {
         let psa = PackedSuffixArray::from_sa(&self.sa[..]);
         psa.dump_bytes()
     }
 
-    /// Read suffix array without integrity check.
+    /// Load suffix array from reader without integrity check.
     #[cfg(feature = "pack")]
     pub unsafe fn unchecked_load<R: Read>(
-        s: &'s [u8],
+        s: &'a [u8],
         file: R,
     ) -> Result<Self> {
         let psa = PackedSuffixArray::load(file)?;
@@ -280,9 +288,9 @@ impl<'s> SuffixArray<'s> {
         Ok(Self::unchecked_from_parts(s, sa))
     }
 
-    /// Read suffix array.
+    /// Load suffix array from reader.
     #[cfg(feature = "pack")]
-    pub fn load<R: Read>(s: &'s [u8], file: R) -> Result<Self> {
+    pub fn load<R: Read>(s: &'a [u8], file: R) -> Result<Self> {
         use std::io::{Error, ErrorKind};
 
         let sa = unsafe { Self::unchecked_load(s, file)? };
@@ -296,10 +304,10 @@ impl<'s> SuffixArray<'s> {
         }
     }
 
-    /// Read suffix array from a file without integrity check.
+    /// Load suffix array from a file without integrity check.
     #[cfg(feature = "pack")]
     pub unsafe fn unchecked_load_file<P: AsRef<Path>>(
-        s: &'s [u8],
+        s: &'a [u8],
         name: P,
     ) -> Result<Self> {
         use std::fs::File;
@@ -309,9 +317,9 @@ impl<'s> SuffixArray<'s> {
         Self::unchecked_load(s, file)
     }
 
-    /// Read suffix array from a file.
+    /// Load suffix array from a file.
     #[cfg(feature = "pack")]
-    pub fn load_file<P: AsRef<Path>>(s: &'s [u8], name: P) -> Result<Self> {
+    pub fn load_file<P: AsRef<Path>>(s: &'a [u8], name: P) -> Result<Self> {
         use std::io::{Error, ErrorKind};
 
         let sa = unsafe { Self::unchecked_load_file(s, name)? };
@@ -328,7 +336,7 @@ impl<'s> SuffixArray<'s> {
     /// Load suffix array from bytes without integrity check.
     #[cfg(feature = "pack")]
     pub unsafe fn unchecked_load_bytes(
-        s: &'s [u8],
+        s: &'a [u8],
         bytes: &[u8],
     ) -> Result<Self> {
         let psa = PackedSuffixArray::load_bytes(bytes)?;
@@ -338,7 +346,7 @@ impl<'s> SuffixArray<'s> {
 
     /// Load suffix array from bytes.
     #[cfg(feature = "pack")]
-    pub fn load_bytes(s: &'s [u8], bytes: &[u8]) -> Result<Self> {
+    pub fn load_bytes(s: &'a [u8], bytes: &[u8]) -> Result<Self> {
         use std::io::{Error, ErrorKind};
 
         let sa = unsafe { Self::unchecked_load_bytes(s, bytes)? };
@@ -353,13 +361,13 @@ impl<'s> SuffixArray<'s> {
     }
 }
 
-impl<'s> From<SuffixArray<'s>> for Vec<u32> {
-    fn from(sa: SuffixArray<'s>) -> Vec<u32> {
+impl<'a> From<SuffixArray<'a>> for Vec<u32> {
+    fn from(sa: SuffixArray<'a>) -> Vec<u32> {
         sa.sa
     }
 }
 
-impl<'s> AsRef<[u8]> for SuffixArray<'s> {
+impl<'a> AsRef<[u8]> for SuffixArray<'a> {
     fn as_ref(&self) -> &[u8] {
         self.s
     }

@@ -3,20 +3,34 @@ Suffix array
 
 Suffix array construction and searching algorithms for in-memory binary data.
 
-For text indexing, burntsushi's [suffix](https://crates.io/crates/suffix) featuring utf-8 support is preferred.
+To index plain texts, burntsushi's [suffix](https://crates.io/crates/suffix) featuring utf-8 support is a better choice.
 
-Suffix array construction algorithm (SACA) in this crate uses the [C bindings by Amos Wenger](https://crates.io/crates/cdivsufsort) to [Yuta Mori's dissufsort](https://github.com/y-256/libdivsufsort), which is the fastest known SACA running in single thread with only O(1) additional workspace.
+This crate uses the Amos Wenger's [C bindings](https://crates.io/crates/cdivsufsort) to Yuta Mori's [dissufsort](https://github.com/y-256/libdivsufsort) to construct suffix array, which is the fastest known suffix array construction algorithm (SACA) running in single thread that uses merely O(1) additional workspace.
 
-In addition, I have implemented a space-efficient parallel SACA named [pSACAK](https://ieeexplore.ieee.org/document/8371211) in [a separate crate](https://crates.io/crates/psacak). For now, it has not been thoroughly benchmarked as well as optimized. If it is proved to be valuable, I would like to make it an optional SACA for this crate in future.
+In addition, I have implemented the space-efficient parallel SACA [pSACAK](https://ieeexplore.ieee.org/document/8371211) in a separate [crate](https://crates.io/crates/psacak). For now, it has not been thoroughly benchmarked as well as optimized.
 
 TODO
 =====
 * [x] Benchmark using [Pizza&Chili Corpus](http://pizzachili.dcc.uchile.cl).
-* [x] Compare LMS substrings in parallel.
-* [ ] Speed up searching by LCP array (enhanced suffix array).
-* [ ] <del>Add compressed suffix array support.</del>
-* [x] Serialization/deserialization.
-* [x] **Rewrite suffix array construction algorithm (try to parallelize SACA-K according to
-      the recent parallelization efforts on [SAIS](https://link.springer.com/article/10.1007/s11227-018-2395-5) and
-      SACK-K ([[1]](https://ieeexplore.ieee.org/document/8371211), [[2]](https://link.springer.com/chapter/10.1007%2F978-981-15-2767-8_30)) by Bin Lao.
-      Or simply switch the suffix array construction slgorithm to Amos Wenger's [hand-ported](https://crates.io/crates/divsufsort) divsufsort or the [C binding](https://crates.io/crates/cdivsufsort).**
+
+* [ ] Rewrite the benchmarks.
+
+* [ ] <del>Speed up searching by LCP array, a.k.a. construct enhanced suffix array (ESA).</del>
+      There are two major classes of LCP array construction algorithms (LACA):
+      The first class produces LCP array from suffix array. AFAIK, these LACAs have to allocate additional auxiliary arrays (such as [ISA](https://dl.acm.org/doi/10.5555/647820.736222), [PLCP](https://doi.org/10.1007/978-3-642-02441-2_17), and [BWT](https://dl.acm.org/doi/10.5555/2790248.2790251)) to construct the LCP array.
+      The second class constructs the suffix array together with its LCP array.
+      They are fast and space-efficient but require sophisticated modifications on kind of SACAs based on induce copying (such as [sais-lite](https://arxiv.org/abs/1101.3448), [saca-k](https://dl.acm.org/doi/10.1016/j.ipl.2016.09.010), and [divsufsort](https://arxiv.org/abs/1710.01896)).
+      This crate would not provide ESA support until I figure out a proper way to implement it.
+
+* [x] Speed up searching by bucket pointers, inspired by [this paper](https://dl.acm.org/doi/10.1145/1376616.1376683) (which uses a trie as index, interleaved arrays and text fingerprints to improve locality for ESA searching on disk).
+      See `SuffixArray::enable_buckets()`.
+
+* [ ] <del>Add compressed suffix array (CSA) support.</del>
+      CSA safcrificed the speed quite a lot to gain some space efficiency, which is not that necessary.
+
+* [x] Serialization/deserialization. Enable the optional `pack` feature to use those APIs. This feature is based on Paul Masurel's [bitpacking](https://crates.io/crates/bitpacking).
+
+* [x] Rewrite suffix array construction algorithm.
+      Currently, this crate uses [dissufsort](https://github.com/y-256/libdivsufsort) to construct all the suffix arrays.
+
+* [ ] Look into other one's efforts on improving libdivsufsort and multikey quick sort: [1](http://panthema.net/2013/parallel-string-sorting/), [2](https://github.com/akamiru/sort/wiki/General-Description-of-DAware), and [3](https://github.com/jlabeit/parallel-divsufsort).

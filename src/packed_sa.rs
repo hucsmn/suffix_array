@@ -1,8 +1,7 @@
-use bincode::config as bincode_config;
+use std::io::{prelude::*, Result};
+
 use bitpacking::{BitPacker, BitPacker4x as Packer};
 use serde::{Deserialize, Serialize};
-use std::io::prelude::*;
-use std::io::Result;
 
 // Little endian of b"SA4x", i.e. the Packed Suffix Array using BitPacker4x.
 const MAGIC_CSA4: u32 = 2016690515;
@@ -89,7 +88,7 @@ impl PackedSuffixArray {
     }
 
     pub fn dump<W: Write>(&self, file: W) -> Result<()> {
-        let mut cfg = bincode_config();
+        let mut cfg = bincode::config();
         cfg.little_endian();
         match cfg.serialize_into(file, self) {
             Ok(_) => Ok(()),
@@ -98,7 +97,7 @@ impl PackedSuffixArray {
     }
 
     pub fn dump_bytes(&self) -> Result<Vec<u8>> {
-        let mut cfg = bincode_config();
+        let mut cfg = bincode::config();
         cfg.little_endian();
         match cfg.serialize(self) {
             Ok(bytes) => Ok(bytes),
@@ -107,7 +106,7 @@ impl PackedSuffixArray {
     }
 
     pub fn load<R: Read>(file: R) -> Result<Self> {
-        let mut cfg = bincode_config();
+        let mut cfg = bincode::config();
         cfg.little_endian();
         match cfg.deserialize_from(file) {
             Ok(packed) => Ok(packed),
@@ -116,7 +115,7 @@ impl PackedSuffixArray {
     }
 
     pub fn load_bytes(bytes: &[u8]) -> Result<Self> {
-        let mut cfg = bincode_config();
+        let mut cfg = bincode::config();
         cfg.little_endian();
         match cfg.deserialize(bytes) {
             Ok(packed) => Ok(packed),
