@@ -13,6 +13,7 @@ use std::path::Path;
 pub struct SuffixArray<'s> {
     s: &'s [u8],
     sa: Vec<u32>,
+    bkt: Option<Vec<u32>>,
 }
 
 impl<'s> SuffixArray<'s> {
@@ -20,7 +21,7 @@ impl<'s> SuffixArray<'s> {
     pub fn new(s: &'s [u8]) -> Self {
         let mut sa = vec![0; s.len() + 1];
         saca(s, &mut sa[..]);
-        SuffixArray { s, sa }
+        SuffixArray { s, sa, bkt: None }
     }
 
     // Construct suffix array in place.
@@ -52,7 +53,7 @@ impl<'s> SuffixArray<'s> {
     /// Compose existed suffix array and its corresponding byte string
     /// together, and checks the integrity.
     pub fn from_parts(s: &'s [u8], sa: Vec<u32>) -> Option<Self> {
-        let compose = SuffixArray { s, sa };
+        let compose = SuffixArray { s, sa, bkt: None };
         if compose.check_integrity() {
             Some(compose)
         } else {
@@ -63,7 +64,7 @@ impl<'s> SuffixArray<'s> {
     /// Compose existed suffix array and its corresponding byte string
     /// together without integrity check.
     pub unsafe fn unchecked_from_parts(s: &'s [u8], sa: Vec<u32>) -> Self {
-        SuffixArray { s, sa }
+        SuffixArray { s, sa, bkt: None }
     }
 
     fn check_integrity(&self) -> bool {
@@ -80,22 +81,99 @@ impl<'s> SuffixArray<'s> {
         true
     }
 
-    /// Test if contains given sub-string.
-    pub fn contains(&self, sub: &[u8]) -> bool {
-        self.sa
-            .binary_search_by_key(&sub, |&i| {
-                trunc(&self.s[i as usize..], sub.len())
-            })
+    /// Enable the internal buckets to speed up searching.
+    pub fn enable_buckets(&mut self) {
+        if self.bkt.is_some() {
+            return;
+        }
+        let mut bkt = vec![0; 256 * 257 + 1];
+        bkt[0] = 1;
+        if self.s.len() > 0 {
+            for i in 0..self.s.len() - 1 {
+                let c0 = unsafe { *self.s.get_unchecked(i) };
+                let c1 = unsafe { *self.s.get_unchecked(i + 1) };
+                let idx = (c0 as usize * 257) + (c1 as usize + 1) + 1;
+                bkt[idx] += 1;
+            }
+            let c0 = unsafe { *self.s.get_unchecked(self.s.len() - 1) };
+            let idx = (c0 as usize * 257) + 1;
+            bkt[idx] += 1;
+        }
+
+        let mut sum = 0;
+        for p in bkt.iter_mut() {
+            sum += *p;
+            *p = sum;
+        }
+
+        self.bkt = Some(bkt);
+    }
+
+    /// Get bucket of the suffix array to search the given pattern.
+    #[inline]
+    fn get_bucket(&self, pat: &[u8]) -> Range<usize> {
+        if let Some(ref bkt) = self.bkt {
+            if pat.len() > 1 {
+                // sub-bucket (c0, c1).
+                let c0 = pat[0];
+                let c1 = pat[1];
+                let idx = (c0 as usize * 257) + (c1 as usize + 1) + 1;
+                bkt[idx - 1] as usize..bkt[idx] as usize
+            } else if pat.len() == 1 {
+                // top-level bucket (c0, $)..=(c0, 255).
+                let c0 = pat[0];
+                let start_idx = c0 as usize * 257;
+                let end_idx = start_idx + 257;
+                bkt[start_idx] as usize..bkt[end_idx] as usize
+            } else {
+                // the sentinel bucket.
+                0..1
+            }
+        } else {
+            0..self.sa.len()
+        }
+    }
+
+    /// Get top-level bucket of the suffix array to search the given pattern.
+    #[inline]
+    fn get_top_bucket(&self, pat: &[u8]) -> Range<usize> {
+        if let Some(ref bkt) = self.bkt {
+            if pat.len() > 0 {
+                let c0 = pat[0];
+                let start_idx = c0 as usize * 257;
+                let end_idx = start_idx + 257;
+                bkt[start_idx] as usize..bkt[end_idx] as usize
+            } else {
+                0..1
+            }
+        } else {
+            0..self.sa.len()
+        }
+    }
+
+    /// Test if contains given pattern.
+    pub fn contains(&self, pat: &[u8]) -> bool {
+        let s = self.s;
+        let sa = &self.sa[self.get_bucket(pat)];
+
+        sa.binary_search_by_key(&pat, |&i| trunc(&s[i as usize..], pat.len()))
             .is_ok()
     }
 
-    /// Search for all the unsorted overlapping occurrence of given sub-string.
-    pub fn search_all(&self, sub: &[u8]) -> &[u32] {
+    /// Search for all the unsorted overlapping occurrence of given pattern.
+    pub fn search_all(&self, pat: &[u8]) -> &[u32] {
+        let s = self.s;
+        let sa = if pat.len() > 0 {
+            &self.sa[self.get_bucket(pat)]
+        } else {
+            &self.sa[..]
+        };
+
         let mut i = 0;
-        let mut k = self.sa.len();
+        let mut k = sa.len();
         while i < k {
             let m = i + (k - i) / 2;
-            if sub > &self.s[self.sa[m] as usize..] {
+            if pat > &s[sa[m] as usize..] {
                 i = m + 1;
             } else {
                 k = m;
@@ -103,47 +181,64 @@ impl<'s> SuffixArray<'s> {
         }
 
         let mut j = i;
-        k = self.sa.len();
+        let mut k = sa.len();
         while j < k {
             let m = j + (k - j) / 2;
-            if self.s[self.sa[m] as usize..].starts_with(sub) {
+            if s[sa[m] as usize..].starts_with(pat) {
                 j = m + 1;
             } else {
                 k = m;
             }
         }
 
-        &self.sa[i..j]
+        &sa[i..j]
     }
 
-    /// Search for one sub-string that has the longest common prefix of the
+    /// Search for a sub-string that has the longest common prefix of the
     /// given pattern.
     pub fn search_lcp(&self, pat: &[u8]) -> Range<usize> {
-        let point =
-            self.sa.binary_search_by(|&i| self.s[i as usize..].cmp(pat));
+        let s = self.s;
+        let sa = &self.sa[self.get_bucket(pat)];
 
-        match point {
+        if sa.len() == 0 {
+            // pat.len() > 0, for any i < s.len(): lcp(pat, s[i..]) <= 1.
+            let sa = &self.sa[self.get_top_bucket(pat)];
+            if sa.len() > 0 {
+                // there exists i < s.len(): lcp(pat, s[i..]) == 1.
+                let i = sa[0] as usize;
+                return i..i + 1;
+            } else {
+                // for any i < s.len(): lcp(pat, s[i..]) == 0.
+                return self.s.len()..self.s.len();
+            }
+        }
+
+        match sa.binary_search_by(|&i| s[i as usize..].cmp(pat)) {
             Ok(i) => {
-                let j = self.sa[i] as usize;
-                j..self.s.len()
+                // find a suffix equals to the pattern.
+                let start = sa[i] as usize;
+                start..s.len()
             }
             Err(i) => {
-                if i > 0 && i < self.sa.len() {
-                    let j = self.sa[i - 1] as usize;
-                    let k = self.sa[i] as usize;
-                    let a = lcp(pat, &self.s[j..]);
-                    let b = lcp(pat, &self.s[k..]);
-                    if a > b {
-                        j..j + a
+                // find a position to insert the pattern.
+                if i > 0 && i < sa.len() {
+                    let start_a = sa[i - 1] as usize;
+                    let start_b = sa[i] as usize;
+                    let len_a = lcp(pat, &s[start_a..]);
+                    let len_b = lcp(pat, &s[start_b..]);
+                    if len_a > len_b {
+                        start_a..start_a + len_a
                     } else {
-                        k..k + b
+                        start_b..start_b + len_b
                     }
-                } else if i == self.sa.len() {
-                    let j = self.sa[i - 1] as usize;
-                    let a = lcp(pat, &self.s[j..]);
-                    j..j + a
+                } else if i == 0 {
+                    let start = sa[i] as usize;
+                    let len = lcp(pat, &s[start..]);
+                    start..start + len
                 } else {
-                    self.s.len()..self.s.len()
+                    let start = sa[i - 1] as usize;
+                    let len = lcp(pat, &s[start..]);
+                    start..start + len
                 }
             }
         }

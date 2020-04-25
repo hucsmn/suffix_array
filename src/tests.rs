@@ -11,33 +11,50 @@ macro_rules! bytes {
 proptest! {
     #[test]
     fn conversion_correctness(s in bytes!(0..4096_usize)) {
-        let (_, sa_vec) = SuffixArray::new(&*s).into_parts();
-        prop_assert!(SuffixArray::from_parts(&*s, sa_vec).is_some());
+        let (_, sa_vec) = SuffixArray::new(&s[..]).into_parts();
+        prop_assert!(SuffixArray::from_parts(&s[..], sa_vec).is_some());
     }
 
     #[test]
     fn contains_correctness((s, pat) in bytes_with_pat(0..4096_usize)) {
-        let sa = SuffixArray::new(&*s);
-        let sa_result = sa.contains(&*pat);
-        let naive_result = naive_contains(&*s, &*pat);
-        prop_assert!(sa_result == naive_result);
+        let naive_result = naive_contains(&s[..], &pat[..]);
+
+        let mut sa = SuffixArray::new(&s[..]);
+        let sa_result_simple = sa.contains(&pat[..]);
+        prop_assert_eq!(sa_result_simple, naive_result);
+
+        sa.enable_buckets();
+        let sa_result_bucket = sa.contains(&pat[..]);
+        prop_assert_eq!(sa_result_bucket, naive_result);
     }
 
     #[test]
     fn search_all_correctness((s, pat) in bytes_with_pat(0..4096_usize)) {
-        let sa = SuffixArray::new(&*s);
-        let mut sa_result = Vec::from(sa.search_all(&*pat));
-        sa_result.sort();
-        let naive_result = naive_search_all(&*s, &*pat);
-        prop_assert!(sa_result == naive_result);
+        let mut naive_result = naive_search_all(&s[..], &pat[..]);
+        naive_result.sort();
+
+        let mut sa = SuffixArray::new(&s[..]);
+        let mut sa_result_simple = Vec::from(sa.search_all(&pat[..]));
+        sa_result_simple.sort();
+        prop_assert_eq!(&sa_result_simple[..], &naive_result[..]);
+
+        sa.enable_buckets();
+        let mut sa_result_bucket = Vec::from(sa.search_all(&pat[..]));
+        sa_result_bucket.sort();
+        prop_assert_eq!(&sa_result_bucket[..], &naive_result[..]);
     }
 
     #[test]
     fn search_lcp_correctness((s, pat) in bytes_with_pat(0..1024_usize)) {
-        let sa = SuffixArray::new(&*s);
-        let sa_result = &s[sa.search_lcp(&*pat)];
-        let naive_result = naive_search_lcp(&*s, &*pat);
-        prop_assert!(sa_result == naive_result);
+        let naive_result = naive_search_lcp(&s[..], &pat[..]);
+
+        let mut sa = SuffixArray::new(&s[..]);
+        let sa_result_simple = &s[sa.search_lcp(&pat[..])];
+        prop_assert_eq!(sa_result_simple, naive_result);
+
+        sa.enable_buckets();
+        let sa_result_bucket = &s[sa.search_lcp(&pat[..])];
+        prop_assert_eq!(sa_result_bucket, naive_result);
     }
 
     #[cfg(feature = "pack")]
@@ -45,16 +62,16 @@ proptest! {
     fn pack_correctness(s in bytes!(0..4096_usize)) {
         use std::io::Cursor;
 
-        let sa1 = SuffixArray::new(&*s);
+        let sa1 = SuffixArray::new(&s[..]);
         let bytes1 = sa1.dump_bytes().unwrap();
         let mut bytes2 = Vec::with_capacity(bytes1.len());
         sa1.dump(Cursor::new(&mut bytes2)).unwrap();
-        let sa2 = SuffixArray::load_bytes(&*s, &*bytes1).unwrap();
+        let sa2 = SuffixArray::load_bytes(&s[..], &*bytes1).unwrap();
 
         let (_, sa1) = sa1.into_parts();
         let (_, sa2) = sa2.into_parts();
-        prop_assert!(sa1 == sa2);
-        prop_assert!(bytes1 == bytes2);
+        prop_assert_eq!(sa1, sa2);
+        prop_assert_eq!(bytes1, bytes2);
     }
 }
 
@@ -83,31 +100,31 @@ fn bytes_with_pat(
     })
 }
 
-fn naive_contains(s: &[u8], sub: &[u8]) -> bool {
-    for i in 0..=s.len().saturating_sub(sub.len()) {
-        if sub == &s[i..Ord::min(s.len(), i + sub.len())] {
+fn naive_contains(s: &[u8], pat: &[u8]) -> bool {
+    for i in 0..=s.len().saturating_sub(pat.len()) {
+        if pat == &s[i..Ord::min(s.len(), i + pat.len())] {
             return true;
         }
     }
     false
 }
 
-fn naive_search_all(s: &[u8], sub: &[u8]) -> Vec<u32> {
+fn naive_search_all(s: &[u8], pat: &[u8]) -> Vec<u32> {
     let mut result = Vec::new();
-    for i in 0..=s.len().saturating_sub(sub.len()) {
-        if sub == &s[i..Ord::min(s.len(), i + sub.len())] {
+    for i in 0..=s.len().saturating_sub(pat.len()) {
+        if pat == &s[i..Ord::min(s.len(), i + pat.len())] {
             result.push(i as u32);
         }
     }
     result
 }
 
-fn naive_search_lcp<'s>(s: &[u8], sub: &'s [u8]) -> &'s [u8] {
-    let mut matched = &sub[..0];
+fn naive_search_lcp<'s>(s: &[u8], pat: &'s [u8]) -> &'s [u8] {
+    let mut matched = &pat[..0];
     for i in 0..=s.len() {
-        let n = lcp(sub, &s[i..]);
+        let n = lcp(pat, &s[i..]);
         if n > matched.len() {
-            matched = &sub[..n];
+            matched = &pat[..n];
         }
     }
     matched

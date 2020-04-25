@@ -43,7 +43,9 @@ macro_rules! search_method_bench {
 
                 eprintln!("constructing sa...");
                 let osa = Rc::new(OwnedSA::new(sdata, |sdata| {
-                    SuffixArray::new(&sdata[..])
+                    let mut sa = SuffixArray::new(&sdata[..]);
+                    sa.enable_buckets();
+                    sa
                 }));
 
                 for &pname in patterns.iter() {
