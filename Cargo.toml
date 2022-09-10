@@ -24,7 +24,7 @@ rand = "0.6"
 flate2 = "1"
 reqwest = "0.9"
 criterion = "0.2"
-rental = "0.5"
+ouroboros = "0.15"
 proptest = "0.9"
 
 [features]

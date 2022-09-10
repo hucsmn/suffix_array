@@ -1,26 +1,18 @@
-#[macro_use]
-extern crate rental;
-
 mod utils;
 
+use ouroboros::self_referencing;
 use criterion::{criterion_group, criterion_main, Criterion};
 use std::rc::Rc;
 use suffix_array::SuffixArray;
 use utils::*;
 
-// workaround for the static lifetime bound
-rental! {
-    mod owned_sa {
-        use suffix_array::SuffixArray;
-
-        #[rental]
-        pub struct OwnedSA {
-            data: Vec<u8>,
-            sa: SuffixArray<'data>,
-        }
-    }
+#[self_referencing]
+pub struct OwnedSA {
+    pub data: Vec<u8>,
+    #[covariant]
+    #[borrows(data)]
+    pub sa: SuffixArray<'this>,
 }
-use owned_sa::OwnedSA;
 
 macro_rules! search_method_bench {
     ($name:ident, $label:expr, $method:ident) => {
@@ -42,11 +34,14 @@ macro_rules! search_method_bench {
                 let slen = sdata.len();
 
                 eprintln!("constructing sa...");
-                let osa = Rc::new(OwnedSA::new(sdata, |sdata| {
-                    let mut sa = SuffixArray::new(&sdata[..]);
-                    sa.enable_buckets();
-                    sa
-                }));
+                let osa = Rc::new(OwnedSABuilder {
+                    data: sdata,
+                    sa_builder: |data: &Vec<u8>| {
+                        let mut sa = SuffixArray::new(&data[..]);
+                        sa.enable_buckets();
+                        sa
+                    },
+                }.build());
 
                 for &pname in patterns.iter() {
                     eprint!("loading pattern {}...", pname);
@@ -67,9 +62,7 @@ macro_rules! search_method_bench {
                     let osa = osa.clone();
                     crit.bench_function(bench_name.as_ref(), move |b| {
                         b.iter(|| {
-                            osa.rent(|sa| {
-                                sa.$method(&pdata[..]);
-                            })
+                            osa.borrow_sa().$method(&pdata[..]);
                         })
                     });
                 }
